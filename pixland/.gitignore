@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.env
+pixsessions/
+sessions/
+ssess/
+pixlands_progression_reports/
+pixlands_daily_reports/
+pixlands_panel_state.json
+pixlands_storage_marker.json
+*.session
+*.session-journal
+
+uvicorn*.log

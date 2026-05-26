@@ -1,0 +1,28 @@
+# Telegram sessions and authentication data
+*.session
+*.session-*
+*.session.*
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Local databases, logs, and runtime data
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.log
+data/
+
+# Python environment and caches
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Machine-specific files and local experiments
+.claude/settings.local.json
+.DS_Store
+Thumbs.db
+/fishvzlom.py

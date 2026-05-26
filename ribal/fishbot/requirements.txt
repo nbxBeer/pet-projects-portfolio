@@ -1,0 +1,11 @@
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+telethon==1.43.2
+aiosqlite==0.20.0
+PyYAML==6.0.2
+pytz==2024.2
+pydantic==2.10.3
+python-multipart==0.0.20
+aiohttp==3.11.11
+python-dotenv==1.0.1
+python-socks[asyncio]==2.4.4

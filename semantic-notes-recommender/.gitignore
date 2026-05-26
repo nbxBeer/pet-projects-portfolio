@@ -1,0 +1,11 @@
+node_modules/
+vendor/
+models/
+.env
+*.local
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

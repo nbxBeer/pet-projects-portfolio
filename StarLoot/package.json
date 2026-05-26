@@ -1,0 +1,16 @@
+{
+  "name": "space-expedition-game",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node backend/src/server.js",
+    "install-deps": "cd backend && npm install",
+    "check:backend": "node -c backend/src/server.js && node -c backend/src/app.js",
+    "check:backend:tests": "cd backend && npm test -- --passWithNoTests",
+    "check:admin": "node -c admin-panel/server.js",
+    "check:frontend": "cd frontend && npm run build",
+    "release:check": "npm run check:backend && npm run check:backend:tests && npm run check:admin && npm run check:frontend"
+  }
+}

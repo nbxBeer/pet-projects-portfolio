@@ -1,0 +1,10 @@
+{
+  "connectionString": "postgresql://user:password@host:port/dbname",
+  "pgBinPath": "C:\\Program Files\\PostgreSQL\\18\\bin",
+  "botToken": "YOUR_BOT_TOKEN",
+  "adminChatId": "",
+  "gameChatId": "",
+  "announceTarget": "game",
+  "backendUrl": "https://your-backend.example.com/",
+  "adminSecret": "YOUR_ADMIN_SECRET"
+}

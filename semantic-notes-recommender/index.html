@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Связанные заметки</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --line: #d8dee6;
+      --text: #17202a;
+      --muted: #637083;
+      --teal: #0f766e;
+      --blue: #1d4ed8;
+      --red: #b42318;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.15;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      line-height: 1.2;
+    }
+
+    button,
+    select,
+    input {
+      font: inherit;
+    }
+
+    button,
+    .file-button {
+      border: 1px solid #9aa6b5;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      min-height: 36px;
+      padding: 7px 11px;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: #fff;
+    }
+
+    button.danger {
+      border-color: #e2b8b3;
+      color: var(--red);
+    }
+
+    button.active {
+      background: #17202a;
+      border-color: #17202a;
+      color: #fff;
+    }
+
+    select,
+    input {
+      width: 100%;
+      border: 1px solid #aeb8c4;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      padding: 8px 10px;
+    }
+
+    label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    th,
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: #3a4553;
+      font-size: 13px;
+      font-weight: 700;
+      background: #f8fafc;
+    }
+
+    .stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .stat {
+      min-width: 94px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 6px 9px;
+      background: #f9fafb;
+      text-align: right;
+    }
+
+    .stat strong {
+      display: block;
+      color: var(--text);
+      font-size: 17px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(300px, 430px) minmax(0, 1fr);
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 14px;
+    }
+
+    .side {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .group {
+      display: grid;
+      gap: 10px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .file-button {
+      display: inline-grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .file-button input {
+      display: none;
+    }
+
+    .note-list {
+      display: grid;
+      gap: 8px;
+      max-height: 440px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .note-button {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 9px;
+      width: 100%;
+      min-height: 56px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .note-button.active {
+      border-color: var(--teal);
+      background: #eef9f6;
+      color: var(--text);
+    }
+
+    .note-number {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #edf2f7;
+      color: #394657;
+      font-weight: 700;
+    }
+
+    .note-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .note-meta {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .ranking {
+      display: grid;
+      gap: 10px;
+    }
+
+    .item {
+      display: grid;
+      gap: 7px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .item-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-weight: 700;
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .score {
+      color: var(--blue);
+      white-space: nowrap;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .full-text {
+      margin: 0;
+      max-height: 620px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 14px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font: 14px/1.55 Consolas, "Courier New", monospace;
+    }
+
+    .grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .grid4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .embed-status {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #f9fafb;
+      font-size: 13px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .embed-ready {
+      color: var(--teal);
+      font-weight: 600;
+    }
+
+    @media (max-width: 1200px) {
+      .grid4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .empty {
+      border: 1px dashed #aeb8c4;
+      border-radius: 8px;
+      padding: 18px;
+      color: var(--muted);
+      text-align: center;
+      background: #fff;
+    }
+
+    .graph {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .graph svg {
+      display: block;
+      width: 100%;
+      min-width: 760px;
+      height: 560px;
+    }
+
+    .node text {
+      paint-order: stroke;
+      stroke: #fff;
+      stroke-width: 4px;
+      stroke-linejoin: round;
+      fill: #17202a;
+      font-size: 12px;
+    }
+
+    .edge {
+      stroke: #8492a6;
+      stroke-opacity: 0.55;
+    }
+
+    .edge.active {
+      stroke: var(--blue);
+      stroke-opacity: 0.9;
+    }
+
+    .edge.muted {
+      stroke-opacity: 0.18;
+    }
+
+    .node {
+      cursor: pointer;
+    }
+
+    .node circle {
+      fill: #0f766e;
+      stroke: #0b3b37;
+      stroke-width: 1.5px;
+    }
+
+    .node.active circle {
+      fill: var(--blue);
+      stroke: #17202a;
+      stroke-width: 2.5px;
+    }
+
+    .node.related circle {
+      fill: #14b8a6;
+    }
+
+    .node.muted circle,
+    .node.muted text {
+      opacity: 0.42;
+    }
+
+    .node:focus circle {
+      outline: 3px solid rgb(29 78 216 / 0.35);
+      outline-offset: 4px;
+    }
+
+    dialog {
+      width: min(900px, calc(100vw - 28px));
+      max-height: calc(100vh - 28px);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0;
+    }
+
+    dialog::backdrop {
+      background: rgb(15 23 42 / 0.38);
+    }
+
+    .dialog-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .dialog-body {
+      padding: 14px;
+    }
+
+    @media (max-width: 980px) {
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .grid3, .grid4 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Связанные заметки</h1>
+    <div class="stats">
+      <div class="stat">Заметки<strong id="noteCount">0</strong></div>
+      <div class="stat">Связи<strong id="edgeCount">0</strong></div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="side">
+      <section class="panel group">
+        <h2>Данные</h2>
+        <div class="row">
+          <button id="loadSample" class="primary" type="button">Пример</button>
+          <button id="clearNotes" class="danger" type="button">Очистить</button>
+        </div>
+        <label class="file-button">
+          Файлы .txt/.md
+          <input id="fileInput" type="file" multiple accept=".txt,.md,text/plain,text/markdown">
+        </label>
+        <label class="file-button">
+          Папка с заметками
+          <input id="folderInput" type="file" multiple webkitdirectory directory>
+        </label>
+      </section>
+
+      <section class="panel group">
+        <h2>Выбор</h2>
+        <label>
+          Поиск
+          <input id="noteSearch" autocomplete="off">
+        </label>
+        <div id="noteList" class="note-list"></div>
+      </section>
+
+      <section class="panel group">
+        <h2>Параметры</h2>
+        <label>
+          Метод
+          <select id="method"></select>
+        </label>
+        <label>
+          Top-K
+          <input id="topK" type="number" min="1" max="10" value="5">
+        </label>
+        <label>
+          Alpha
+          <input id="alpha" type="range" min="0" max="1" step="0.05" value="0.6">
+        </label>
+        <div id="embedStatus" style="display:none" class="embed-status"></div>
+      </section>
+    </aside>
+
+    <section class="panel">
+      <nav class="tabs" aria-label="Разделы">
+        <button class="tab active" data-view="recommendations" type="button">Рекомендации</button>
+        <button class="tab" data-view="text" type="button">Текст</button>
+        <button class="tab" data-view="compare" type="button">Сравнение</button>
+        <button class="tab" data-view="graph" type="button">Граф</button>
+        <button class="tab" data-view="metrics" type="button">Метрики</button>
+        <button class="tab" data-view="notes" type="button">Список</button>
+      </nav>
+
+      <div id="recommendations" class="view active"></div>
+      <div id="text" class="view"></div>
+      <div id="compare" class="view"></div>
+      <div id="graph" class="view"></div>
+      <div id="metrics" class="view"></div>
+      <div id="notes" class="view"></div>
+    </section>
+  </main>
+
+  <dialog id="noteDialog">
+    <div class="dialog-head">
+      <strong id="dialogTitle"></strong>
+      <button id="closeDialog" type="button">Закрыть</button>
+    </div>
+    <div class="dialog-body">
+      <pre id="dialogText" class="full-text"></pre>
+    </div>
+  </dialog>
+
+  <script src="algorithms.js"></script>
+  <script>
+    const A = window.NotesAlgorithms;
+    const state = {
+      notes: A.sampleNotes.map((note) => ({ ...note, source: "пример" })),
+      selectedId: A.sampleNotes[0]?.id || "",
+      view: "recommendations",
+      embed: { matrix: null, fingerprint: null, loading: false, progress: 0, error: null },
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const methodSelect = $("method");
+    A.methods.forEach((method) => methodSelect.add(new Option(method.title, method.id)));
+
+    function controls() {
+      return {
+        selectedId: state.selectedId,
+        method: $("method").value,
+        topK: Math.max(1, Math.min(10, Number($("topK").value) || 5)),
+        alpha: Number($("alpha").value) || 0,
+      };
+    }
+
+    function notesFingerprint() {
+      return state.notes.map((n) => n.id).join(",");
+    }
+
+    function getEmbedMatrix() {
+      const em = state.embed;
+      if (!em.matrix || em.fingerprint !== notesFingerprint()) return null;
+      return em.matrix;
+    }
+
+    let _nlpPipeline = null;
+    async function loadEmbeddings() {
+      if (state.embed.loading) return;
+      if (window.location.protocol === "file:") {
+        state.embed.error = "Открыто как file:// — нужен сервер. Закройте эту вкладку и запустите start.bat.";
+        renderAll();
+        return;
+      }
+      state.embed.loading = true;
+      state.embed.progress = 0;
+      state.embed.error = null;
+      renderAll();
+      try {
+        if (!_nlpPipeline) {
+          const { pipeline, env } = await import("./vendor/transformers.min.js");
+          env.backends.onnx.wasm.wasmPaths = "./vendor/ort-wasm/";
+          env.backends.onnx.wasm.numThreads = 1;
+          env.localModelPath = "./models/";
+          env.allowRemoteModels = false;
+          _nlpPipeline = await pipeline(
+            "feature-extraction",
+            "Xenova/all-MiniLM-L6-v2",
+            {
+              progress_callback: (info) => {
+                if (info.status === "progress" && info.total) {
+                  state.embed.progress = info.loaded / info.total;
+                  const el = document.getElementById("embedProgress");
+                  if (el) el.textContent = `Загрузка модели... ${Math.round(state.embed.progress * 100)}%`;
+                }
+              },
+            }
+          );
+        }
+        const embeddings = [];
+        for (const note of state.notes) {
+          const text = A.clean(note.title + " " + note.text).slice(0, 512);
+          const out = await _nlpPipeline(text, { pooling: "mean", normalize: true });
+          embeddings.push(Array.from(out.data));
+        }
+        const n = embeddings.length;
+        state.embed.matrix = Array.from({ length: n }, (_, i) =>
+          Array.from({ length: n }, (_, j) =>
+            embeddings[i].reduce((sum, v, k) => sum + v * embeddings[j][k], 0)
+          )
+        );
+        state.embed.fingerprint = notesFingerprint();
+        state.embed.loading = false;
+      } catch (err) {
+        state.embed.loading = false;
+        state.embed.error = String(err.message || err);
+        console.error("Ошибка загрузки модели:", err);
+      }
+      renderAll();
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;",
+      })[char]);
+    }
+
+    function noteById(id) {
+      return state.notes.find((note) => note.id === id) || null;
+    }
+
+    function shortText(value, limit = 22) {
+      return value.length <= limit ? value : value.slice(0, limit - 3).trim() + "...";
+    }
+
+    function fileTitle(file) {
+      return file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || file.name;
+    }
+
+    function isNoteFile(file) {
+      return /\.(txt|md)$/i.test(file.name) || /^text\//.test(file.type);
+    }
+
+    function setView(id) {
+      state.view = id;
+      document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === id));
+      document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === id));
+    }
+
+    function setSelected(id) {
+      if (!state.notes.some((note) => note.id === id)) return;
+      state.selectedId = id;
+      renderAll();
+    }
+
+    function openNote(id) {
+      const note = noteById(id);
+      if (!note) return;
+      $("dialogTitle").textContent = note.title;
+      $("dialogText").textContent = note.text;
+      $("noteDialog").showModal();
+    }
+
+    function rankingHtml(rows) {
+      if (!rows.length) return '<div class="empty">Нет результатов</div>';
+      return `<div class="ranking">${rows.map((item, index) => `
+        <article class="item">
+          <div class="item-head">
+            <span>${index + 1}. ${escapeHtml(item.title)}</span>
+            <span class="score">${item.score.toFixed(4)}</span>
+          </div>
+          <div class="muted">${escapeHtml(item.preview)}</div>
+          <div class="item-actions">
+            <button type="button" data-open="${item.id}">Открыть</button>
+            <button type="button" data-select="${item.id}">Выбрать</button>
+          </div>
+        </article>
+      `).join("")}</div>`;
+    }
+
+    function renderNotePicker() {
+      const query = $("noteSearch").value.trim().toLowerCase();
+      const rows = state.notes
+        .map((note, index) => ({ note, index }))
+        .filter(({ note }) => {
+          const text = `${note.title} ${note.source || ""} ${note.text}`.toLowerCase();
+          return !query || text.includes(query);
+        });
+      $("noteList").innerHTML = rows.length ? rows.map(({ note, index }) => `
+        <button class="note-button ${note.id === state.selectedId ? "active" : ""}" type="button" data-select="${note.id}">
+          <span class="note-number">${index + 1}</span>
+          <span>
+            <span class="note-name">${escapeHtml(note.title)}</span>
+            <span class="note-meta">${escapeHtml(note.source || "текст")} · ${A.clean(note.text).length} симв.</span>
+          </span>
+        </button>
+      `).join("") : '<div class="empty">Нет совпадений</div>';
+    }
+
+    function renderEmbedStatus() {
+      const el = $("embedStatus");
+      const method = $("method").value;
+      if (method !== "embed") {
+        el.style.display = "none";
+        return;
+      }
+      el.style.display = "";
+      const em = state.embed;
+      const ready = getEmbedMatrix();
+      const stale = em.matrix && !ready;
+      if (em.error) {
+        el.innerHTML = `<span style="color:var(--red)">${em.error}</span>`;
+      } else if (em.loading) {
+        el.innerHTML = `<span id="embedProgress" class="muted">Загрузка модели... ${Math.round(em.progress * 100)}%</span>`;
+      } else if (ready) {
+        el.innerHTML = `<span class="embed-ready">Нейросеть готова · all-MiniLM-L6-v2 · ${state.notes.length} заметок</span>`;
+      } else {
+        el.innerHTML = `
+          <button class="primary" data-action="loadEmbed" type="button">${stale ? "Пересчитать" : "Запустить нейросеть"}</button>
+          <span class="muted">Модель bundled · только через start.bat</span>`;
+      }
+    }
+
+    function renderRecommendations() {
+      const c = controls();
+      const em = c.method === "embed" ? getEmbedMatrix() : null;
+      if (c.method === "embed" && !em) {
+        $("recommendations").innerHTML = state.embed.loading
+          ? `<div class="empty" id="embedProgress">Загрузка нейросети... ${Math.round(state.embed.progress * 100)}%</div>`
+          : `<div class="empty">Нажмите <strong>«Загрузить нейросеть»</strong> в панели параметров слева</div>`;
+        return;
+      }
+      const selected = noteById(c.selectedId);
+      const rows = A.rank(state.notes, c.selectedId, c.method, c.topK, c.alpha, em);
+      $("recommendations").innerHTML = `<h2>${escapeHtml(selected?.title || "Рекомендации")}</h2>${rankingHtml(rows)}`;
+    }
+
+    function renderText() {
+      const note = noteById(state.selectedId);
+      $("text").innerHTML = note
+        ? `<h2>${escapeHtml(note.title)}</h2><pre class="full-text">${escapeHtml(note.text)}</pre>`
+        : '<div class="empty">Нет выбранной заметки</div>';
+    }
+
+    function renderCompare() {
+      const c = controls();
+      const em = getEmbedMatrix();
+      $("compare").innerHTML = `<h2>Сравнение методов</h2><div class="grid4">${A.methods.map((method) => {
+        const isEmbed = method.id === "embed";
+        if (isEmbed && !em) {
+          const msg = state.embed.loading ? "Загрузка..." : "Нейросеть не загружена";
+          return `<section><h3>${method.title}</h3><div class="empty">${msg}</div></section>`;
+        }
+        const matrix = isEmbed ? em : null;
+        return `<section><h3>${method.title}</h3>${rankingHtml(A.rank(state.notes, c.selectedId, method.id, c.topK, c.alpha, matrix))}</section>`;
+      }).join("")}</div>`;
+    }
+
+    function renderGraph() {
+      const c = controls();
+      const selected = noteById(c.selectedId);
+      const graphNotes = state.notes.slice(0, 18);
+      if (selected && !graphNotes.some((note) => note.id === selected.id)) {
+        graphNotes.pop();
+        graphNotes.unshift(selected);
+      }
+      let graphEmbed = null;
+      if (c.method === "embed") {
+        const fullEm = getEmbedMatrix();
+        if (fullEm) {
+          const allIds = state.notes.map((n) => n.id);
+          const idx = graphNotes.map((n) => allIds.indexOf(n.id));
+          graphEmbed = idx.map((i) => idx.map((j) => fullEm[i][j]));
+        }
+      }
+      const data = A.graph(graphNotes, c.method, c.alpha, 2, graphEmbed);
+      const edgeCountEl = $("edgeCount"); if (edgeCountEl) edgeCountEl.textContent = data.edges.length;
+      if (!data.nodes.length) {
+        $("graph").innerHTML = '<h2>Граф</h2><div class="empty">Нет заметок</div>';
+        return;
+      }
+      const graphIds = new Set(data.nodes.map((node) => node.id));
+      const relatedIds = new Set([c.selectedId]);
+      data.edges.forEach((edge) => {
+        if (edge.source === c.selectedId) relatedIds.add(edge.target);
+        if (edge.target === c.selectedId) relatedIds.add(edge.source);
+      });
+      const width = 1000;
+      const height = 560;
+      const cx = width / 2;
+      const cy = height / 2;
+      const radius = Math.min(width, height) * 0.38;
+      const pos = new Map(data.nodes.map((node, i) => {
+        const angle = -Math.PI / 2 + (Math.PI * 2 * i) / data.nodes.length;
+        return [node.id, { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius }];
+      }));
+      const edgeSvg = data.edges.map((edge) => {
+        const a = pos.get(edge.source);
+        const b = pos.get(edge.target);
+        const active = edge.source === c.selectedId || edge.target === c.selectedId;
+        const faded = graphIds.has(c.selectedId) && !active;
+        return `<line class="edge ${active ? "active" : ""} ${faded ? "muted" : ""}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke-width="${1 + edge.score * 6}">
+          <title>${edge.score.toFixed(4)}</title>
+        </line>`;
+      }).join("");
+      const nodeSvg = data.nodes.map((node) => {
+        const p = pos.get(node.id);
+        const active = node.id === c.selectedId;
+        const related = relatedIds.has(node.id);
+        const faded = graphIds.has(c.selectedId) && !related;
+        return `<g class="node ${active ? "active" : ""} ${related && !active ? "related" : ""} ${faded ? "muted" : ""}" transform="translate(${p.x} ${p.y})" data-select="${node.id}" data-graph-node="1" role="button" tabindex="0" aria-label="${escapeHtml(node.title)}">
+          <circle r="19"><title>${escapeHtml(node.title)}</title></circle>
+          <text x="0" y="34" text-anchor="middle">${escapeHtml(shortText(node.title))}</text>
+        </g>`;
+      }).join("");
+      $("graph").innerHTML = `<h2>Граф</h2><div class="graph">
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Граф связей">${edgeSvg}${nodeSvg}</svg>
+      </div>`;
+    }
+
+    function renderMetrics() {
+      const c = controls();
+      const em = getEmbedMatrix();
+      const rows = A.methods.map((method) => {
+        if (method.id === "embed" && !em) {
+          return { method: method.title, queries: "—", precision: null, recall: null, ndcg: null };
+        }
+        return A.evaluate(state.notes, method.id, c.topK, c.alpha, method.id === "embed" ? em : null);
+      });
+      const fmt = (v) => (v !== null ? v.toFixed(4) : "—");
+      $("metrics").innerHTML = `<h2>Метрики качества</h2><table>
+        <thead><tr><th>Метод</th><th>Запросы</th><th>Precision@K</th><th>Recall@K</th><th>NDCG@K</th></tr></thead>
+        <tbody>${rows.map((row) => `<tr>
+          <td>${row.method}</td>
+          <td>${row.queries}</td>
+          <td>${fmt(row.precision)}</td>
+          <td>${fmt(row.recall)}</td>
+          <td>${fmt(row.ndcg)}</td>
+        </tr>`).join("")}</tbody>
+      </table>`;
+    }
+
+    function renderNotes() {
+      $("notes").innerHTML = `<h2>Список</h2><table>
+        <thead><tr><th>#</th><th>Файл</th><th>Символы</th><th></th></tr></thead>
+        <tbody>${state.notes.map((note, index) => `<tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(note.source || note.title)}</td>
+          <td>${A.clean(note.text).length}</td>
+          <td><button type="button" data-open="${note.id}">Открыть</button></td>
+        </tr>`).join("")}</tbody>
+      </table>`;
+    }
+
+    function renderAll() {
+      if (!state.notes.some((note) => note.id === state.selectedId)) state.selectedId = state.notes[0]?.id || "";
+      $("noteCount").textContent = state.notes.length;
+      renderNotePicker();
+      renderEmbedStatus();
+      if (!state.notes.length) {
+        ["recommendations", "text", "compare", "graph", "metrics", "notes"].forEach((id) => {
+          $(id).innerHTML = '<div class="empty">Нет заметок</div>';
+        });
+        const edgeEl = $("edgeCount"); if (edgeEl) edgeEl.textContent = "0";
+        return;
+      }
+      renderRecommendations();
+      renderText();
+      renderCompare();
+      renderGraph();
+      renderMetrics();
+      renderNotes();
+    }
+
+    async function readFiles(files, replace = false) {
+      const incoming = [];
+      for (const file of files.filter(isNoteFile)) {
+        const text = await file.text();
+        if (!A.clean(text)) continue;
+        incoming.push({
+          id: A.uid(),
+          title: fileTitle(file),
+          source: file.webkitRelativePath || file.name,
+          text,
+        });
+      }
+      if (replace) state.notes = incoming;
+      else state.notes.push(...incoming);
+      state.selectedId = incoming[0]?.id || state.notes[0]?.id || "";
+      renderAll();
+    }
+
+    document.querySelectorAll(".tab").forEach((button) => {
+      button.addEventListener("click", () => setView(button.dataset.view));
+    });
+
+    document.addEventListener("click", (event) => {
+      if (event.target.closest("[data-action='loadEmbed']")) {
+        loadEmbeddings();
+        return;
+      }
+      const selectButton = event.target.closest("[data-select]");
+      if (selectButton) {
+        setSelected(selectButton.dataset.select);
+        return;
+      }
+      const openButton = event.target.closest("[data-open]");
+      if (openButton) openNote(openButton.dataset.open);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const graphNode = event.target.closest("[data-graph-node]");
+      if (!graphNode) return;
+      event.preventDefault();
+      setSelected(graphNode.dataset.select);
+    });
+
+    ["method", "topK", "alpha"].forEach((id) => $(id).addEventListener("input", renderAll));
+    $("noteSearch").addEventListener("input", renderNotePicker);
+    $("closeDialog").addEventListener("click", () => $("noteDialog").close());
+
+    $("loadSample").addEventListener("click", () => {
+      state.notes = A.sampleNotes.map((note) => ({ ...note, source: "пример" }));
+      state.selectedId = state.notes[0]?.id || "";
+      renderAll();
+    });
+
+    $("clearNotes").addEventListener("click", () => {
+      state.notes = [];
+      state.selectedId = "";
+      renderAll();
+    });
+
+    $("fileInput").addEventListener("change", async (event) => {
+      await readFiles([...event.target.files]);
+      event.target.value = "";
+    });
+
+    $("folderInput").addEventListener("change", async (event) => {
+      await readFiles([...event.target.files], true);
+      event.target.value = "";
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>

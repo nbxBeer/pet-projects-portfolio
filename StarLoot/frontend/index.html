@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Космическая Экспедиция</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+      (function () {
+        var platform = '';
+        try {
+          platform = String((window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.platform) || '').toLowerCase();
+        } catch (e) {}
+
+        try {
+          var hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+          var searchParams = new URLSearchParams(String(window.location.search || ''));
+          platform = platform || String(hashParams.get('tgWebAppPlatform') || searchParams.get('tgWebAppPlatform') || '').toLowerCase();
+        } catch (e) {}
+
+        var ua = navigator.userAgent || '';
+        var coarseTouch = false;
+        try {
+          coarseTouch = window.matchMedia && window.matchMedia('(pointer: coarse) and (hover: none)').matches;
+        } catch (e) {}
+        var isiOS = /iPhone|iPad|iPod/i.test(ua) || platform.indexOf('ios') !== -1;
+
+        if (/Android/i.test(ua) || platform.indexOf('android') !== -1 || (coarseTouch && !isiOS)) {
+          document.documentElement.classList.add('tg-android');
+          window.__STARLOOT_ANDROID_WEBVIEW__ = true;
+        }
+      })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/rocket.svg" />
+  </head>
+  <body>
+    <script>
+      if (document.documentElement.classList.contains('tg-android')) {
+        document.body.classList.add('tg-android');
+      }
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

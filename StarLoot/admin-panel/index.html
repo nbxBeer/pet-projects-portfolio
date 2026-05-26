@@ -1,0 +1,3731 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>StarLoot Admin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root {
+  --bg:#080c14;--bg2:#0d1420;--bg3:#131d2e;--bg4:#1a2540;
+  --border:rgba(99,179,237,0.12);--accent:#63b3ed;--accent2:#7c3aed;
+  --green:#48bb78;--red:#fc8181;--yellow:#f6ad55;--gold:#fbbf24;
+  --text:#e2e8f0;--text2:#718096;--text3:#4a5568;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* Layout */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.topbar-top{display:flex;align-items:center;gap:12px;}
+.topbar-nav{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.logo{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:-0.5px;}
+.logo span{color:var(--text2);font-weight:400;}
+.stats-row{display:flex;gap:20px;margin-left:auto;}
+.stat{text-align:center;}
+.stat-val{font-size:18px;font-weight:700;color:var(--accent);line-height:1;}
+.stat-val.green{color:var(--green);}
+.stat-val.gold{color:var(--gold);}
+.stat-val.red{color:var(--red);}
+.stat-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;}
+.layout{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:300px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.main{flex:1;overflow-y:auto;padding:20px;}
+
+/* Sidebar */
+.sidebar-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);}
+.search-box{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-family:inherit;font-size:13px;outline:none;}
+.search-box:focus{border-color:var(--accent);}
+.player-list{flex:1;overflow-y:auto;}
+.player-item{padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;display:flex;align-items:center;gap:10px;}
+.player-item:hover{background:var(--bg3);}
+.player-item.active{background:rgba(99,179,237,0.1);border-left:3px solid var(--accent);}
+.player-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;}
+.player-info{flex:1;min-width:0;}
+.player-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.player-meta{font-size:11px;color:var(--text2);margin-top:1px;}
+.level-badge{background:var(--bg4);border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;color:var(--accent);flex-shrink:0;}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px);}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;width:440px;max-height:90vh;overflow-y:auto;}
+.modal h3{font-size:16px;margin-bottom:16px;color:var(--accent);}
+.form-row{margin-bottom:12px;}
+.form-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;display:block;}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;}
+.form-input:focus{border-color:var(--accent);}
+.modal-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end;}
+
+/* Buttons */
+.btn{padding:8px 14px;border-radius:8px;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.btn-primary{background:var(--accent);color:var(--bg);}
+.btn-primary:hover{background:#90cdf4;}
+.btn-danger{background:rgba(252,129,129,0.15);color:var(--red);border:1px solid rgba(252,129,129,0.3);}
+.btn-danger:hover{background:rgba(252,129,129,0.25);}
+.btn-success{background:rgba(72,187,120,0.15);color:var(--green);border:1px solid rgba(72,187,120,0.3);}
+.btn-success:hover{background:rgba(72,187,120,0.25);}
+.btn-warning{background:rgba(246,173,85,0.15);color:var(--yellow);border:1px solid rgba(246,173,85,0.3);}
+.btn-purple{background:rgba(124,58,237,0.2);color:#c4b5fd;border:1px solid rgba(124,58,237,0.3);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-full{width:100%;}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+
+/* Player header */
+.section-title{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.player-header{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;}
+.player-header-top{display:flex;align-items:center;gap:16px;margin-bottom:16px;}
+.player-big-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;flex-shrink:0;}
+.player-big-name{font-size:20px;font-weight:700;}
+.player-big-id{font-size:12px;color:var(--text2);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+.banned-badge{background:rgba(252,129,129,0.2);color:var(--red);border:1px solid rgba(252,129,129,0.3);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;margin-left:8px;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.stat-card{background:var(--bg3);border-radius:10px;padding:12px;text-align:center;}
+.stat-card-val{font-size:20px;font-weight:700;color:var(--accent);}
+.stat-card-label{font-size:11px;color:var(--text2);margin-top:4px;}
+
+/* Actions */
+.actions-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.action-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.action-card h4{font-size:12px;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;}
+.action-input-row{display:flex;gap:6px;margin-bottom:6px;}
+.action-input-row:last-child{margin-bottom:0;}
+.action-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;min-width:0;}
+.action-input:focus{border-color:var(--accent);}
+select.action-input option{background:var(--bg3);}
+
+/* Tables */
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{text-align:left;padding:8px 10px;background:var(--bg3);color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;}
+.data-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.data-table tr:hover td{background:rgba(255,255,255,0.02);}
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;overflow-x:auto;}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:12px;}
+.tab{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);color:var(--text2);background:transparent;transition:all 0.15s;}
+.tab.active{background:rgba(99,179,237,0.15);color:var(--accent);border-color:var(--accent);}
+
+/* Buff cards */
+.buff-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.buff-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;}
+.buff-card.expired{opacity:0.5;}
+.buff-type{font-weight:700;font-size:13px;flex:1;}
+.buff-status{font-size:11px;}
+.buff-status.active{color:var(--green);}
+.buff-status.expired{color:var(--red);}
+.buff-meta{font-size:11px;color:var(--text2);}
+
+/* Tags */
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;}
+.tag-green{background:rgba(72,187,120,0.2);color:var(--green);}
+.tag-red{background:rgba(252,129,129,0.2);color:var(--red);}
+.tag-blue{background:rgba(99,179,237,0.2);color:var(--accent);}
+.tag-yellow{background:rgba(246,173,85,0.2);color:var(--yellow);}
+.tag-purple{background:rgba(183,148,244,0.2);color:#b794f4;}
+.r-common{color:#a0aec0;}.r-rare{color:#63b3ed;}.r-epic{color:#b794f4;}.r-legendary{color:var(--gold);}.r-mythical{color:#fc8181;}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+.toast.show{opacity:1;}
+.toast.ok{border-color:var(--green);color:var(--green);}
+.toast.err{border-color:var(--red);color:var(--red);}
+
+.empty{text-align:center;padding:32px;color:var(--text3);font-size:13px;}
+.loading{text-align:center;padding:32px;color:var(--text2);}
+.hint{font-size:11px;color:var(--text3);margin-top:4px;}
+
+/* Pagination */
+.pagination{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-top:1px solid var(--border);}
+.pagination .btn{min-width:32px;padding:5px 10px;}
+.pagination .page-info{font-size:12px;color:var(--text2);font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- Config Modal -->
+<div class="modal-bg" id="configModal" style="display:none">
+  <div class="modal">
+    <h3>Connection Settings</h3>
+    <div class="form-row">
+      <label class="form-label">PostgreSQL Connection URL</label>
+      <input class="form-input" id="cfg-url" placeholder="postgresql://user:pass@host:port/db" style="font-size:11px">
+      <div class="hint">postgresql://postgres:change_me@127.0.0.1:5432/space_game</div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">PostgreSQL bin path (pg_dump/psql)</label>
+      <input class="form-input" id="cfg-pg-bin" placeholder="C:\\Program Files\\PostgreSQL\\18\\bin">
+      <div class="hint">Если PATH нестабилен, укажи папку bin явно.</div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Telegram Bot Token (для NFT уведомлений)</label>
+      <input class="form-input" id="cfg-bot" placeholder="123456:ABC-DEF..." type="password">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Admin Chat ID (твой Telegram ID)</label>
+      <input class="form-input" id="cfg-admin-id" placeholder="123456789">
+      <div class="hint">Узнай у @userinfobot</div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Game Chat ID (группа для объявлений)</label>
+      <input class="form-input" id="cfg-game-chat" placeholder="-1003736557732">
+      <div class="hint">ID группы (со знаком минус). Бот должен быть админом в группе.</div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Куда отправлять уведомления о событиях/турнирах</label>
+      <select class="form-input" id="cfg-announce-target">
+        <option value="game">В игровой чат (если не задан — админу)</option>
+        <option value="admin">Только мне (admin chat) — режим дебага</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Backend URL (для событий)</label>
+      <input class="form-input" id="cfg-backend" placeholder="https://starloot-production.up.railway.app">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Admin Secret (ADMIN_SECRET из Railway)</label>
+      <input class="form-input" id="cfg-secret" type="password" placeholder="qwerty123456">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeConfig()">Отмена</button>
+      <button class="btn btn-primary" onclick="testAndSave()">Сохранить и подключиться</button>
+    </div>
+  </div>
+</div>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-top">
+    <div class="logo">StarLoot <span>Admin</span></div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val" id="s-users">—</div><div class="stat-label" data-i18n="players">Players</div></div>
+      <div class="stat"><div class="stat-val green" id="s-active">—</div><div class="stat-label" data-i18n="today">Today</div></div>
+      <div class="stat"><div class="stat-val" id="s-exps">—</div><div class="stat-label" data-i18n="activeExps">Active exps</div></div>
+      <div class="stat"><div class="stat-val gold" id="s-nfts">—</div><div class="stat-label" data-i18n="nftPending">NFT pending</div></div>
+      <div class="stat" style="cursor:pointer" onclick="showAnalytics()"><div class="stat-val" id="s-ad">—</div><div class="stat-label" data-i18n="viaLinks">Via links</div></div>
+      <div class="stat"><div class="stat-val red" id="s-banned">—</div><div class="stat-label" data-i18n="bans">Bans</div></div>
+    </div>
+    <div style="display:flex;gap:2px;background:var(--bg3);border-radius:6px;padding:2px;border:1px solid var(--border)">
+      <button id="lang-btn-en" class="btn btn-sm" style="padding:3px 8px;font-size:11px;background:transparent;border:none;color:var(--text);font-weight:700" onclick="setLang('en')">EN</button>
+      <button id="lang-btn-ru" class="btn btn-sm" style="padding:3px 8px;font-size:11px;background:transparent;border:none;color:var(--text2);font-weight:400" onclick="setLang('ru')">RU</button>
+    </div>
+  </div>
+  <div class="topbar-nav">
+    <button class="btn btn-sm btn-primary" onclick="showAnalytics()"><span data-i18n="linksChats">Links & Chats</span></button>
+    <button class="btn btn-sm btn-ghost" onclick="openConfig()"><span data-i18n="settings">Settings</span></button>
+    <button class="btn btn-sm btn-ghost" onclick="showEvents()"><span data-i18n="events">Events</span></button>
+    <button class="btn btn-sm btn-ghost" onclick="showTournaments()"><span data-i18n="tournaments">Tournaments</span></button>
+    <button class="btn btn-sm btn-ghost" onclick="showReferrals()"><span data-i18n="referrals">Referrals</span></button>
+    <button class="btn btn-sm btn-ghost" onclick="showQuests()"><span data-i18n="quests">Quests</span></button>
+    <button class="btn btn-sm btn-ghost" onclick="showNews()"><span data-i18n="news">News</span></button>
+    <button class="btn btn-sm btn-ghost" onclick="showPrestigeHistory()"><span data-i18n="prestige">Prestige</span></button>
+    <button class="btn btn-sm btn-ghost" onclick="showDbBackup()"><span data-i18n="backups">Backups</span></button>
+    <button class="btn btn-sm btn-ghost" onclick="showAnalytics()"><span data-i18n="analytics">Analytics</span></button>
+    <button class="btn btn-sm btn-ghost" onclick="loadPlayers()">↻</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <input class="search-box" id="searchBox" data-i18n-ph="searchPlaceholder" placeholder="Search by username or ID..." oninput="filterPlayers()">
+    </div>
+    <div class="player-list" id="playerList"><div class="loading">Загрузка...</div></div>
+  </div>
+
+  <!-- Main -->
+  <div class="main" id="main">
+    <div class="empty" style="margin-top:80px;font-size:15px;" data-i18n="selectPlayer">Select a player from the list</div>
+  </div>
+</div>
+
+<!-- News Modal -->
+<div class="modal-bg" id="newsModal" style="display:none">
+  <div class="modal" style="width:600px;max-width:95vw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0">News Manager</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeNews()">✕</button>
+    </div>
+
+    <!-- Visibility toggle -->
+    <div style="background:var(--bg3);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-weight:600;font-size:13px">Показывать новость игрокам</div>
+        <div class="hint" style="margin-top:2px">Изменение вступает в силу немедленно для всех игроков</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="news-visible" onchange="toggleNewsVisibility(this.checked)"
+          style="width:18px;height:18px;cursor:pointer;accent-color:var(--green)">
+        <span id="news-visible-label" style="font-size:12px;color:var(--text2)">Выкл</span>
+      </label>
+    </div>
+
+    <!-- Icon -->
+    <div class="form-row">
+      <label class="form-label">Иконка</label>
+      <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+        <input class="form-input" id="news-icon" placeholder="📰" style="width:44px;text-align:center;font-size:18px" oninput="document.getElementById('news-icon-pre').textContent=this.value||'📰'">
+        <span id="news-icon-pre" style="font-size:24px;margin:0 4px">📰</span>
+        <button class="btn btn-sm" onclick="pickNewsIcon('📰')">📰</button>
+        <button class="btn btn-sm" onclick="pickNewsIcon('📢')">📢</button>
+        <button class="btn btn-sm" onclick="pickNewsIcon('🚀')">🚀</button>
+        <button class="btn btn-sm" onclick="pickNewsIcon('🎉')">🎉</button>
+        <button class="btn btn-sm" onclick="pickNewsIcon('⚡')">⚡</button>
+        <button class="btn btn-sm" onclick="pickNewsIcon('🌟')">🌟</button>
+        <button class="btn btn-sm" onclick="pickNewsIcon('🔔')">🔔</button>
+        <button class="btn btn-sm" onclick="pickNewsIcon('💬')">💬</button>
+      </div>
+    </div>
+
+    <!-- Russian content -->
+    <div style="background:var(--bg3);border-radius:10px;padding:12px 16px;margin-bottom:10px">
+      <div class="form-label" style="margin-bottom:8px">Русский</div>
+      <div class="form-row">
+        <label class="form-label">Заголовок (RU)</label>
+        <input class="form-input" id="news-title-ru" placeholder="Заголовок новости...">
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">Описание (RU)</label>
+        <textarea class="form-input" id="news-desc-ru" rows="3" placeholder="Текст новости на русском..." style="resize:vertical;font-family:inherit"></textarea>
+      </div>
+    </div>
+
+    <!-- English content -->
+    <div style="background:var(--bg3);border-radius:10px;padding:12px 16px;margin-bottom:16px">
+      <div class="form-label" style="margin-bottom:8px">English</div>
+      <div class="form-row">
+        <label class="form-label">Title (EN)</label>
+        <input class="form-input" id="news-title-en" placeholder="News title...">
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">Description (EN)</label>
+        <textarea class="form-input" id="news-desc-en" rows="3" placeholder="News text in English..." style="resize:vertical;font-family:inherit"></textarea>
+      </div>
+    </div>
+
+    <div id="news-status" style="font-size:12px;color:var(--text2);margin-bottom:8px;min-height:16px"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeNews()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveNews()">Сохранить новость</button>
+    </div>
+  </div>
+</div>
+
+<!-- Events Modal -->
+<div class="modal-bg" id="eventsModal" style="display:none">
+  <div class="modal" style="width:700px;max-width:95vw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0">Game Events</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeEvents()">✕</button>
+    </div>
+
+    <!-- Presets -->
+    <div style="margin-bottom:12px">
+      <div class="form-label" style="margin-bottom:8px">Быстрые шаблоны</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="applyPreset('double_xp')">Двойной XP</button>
+        <button class="btn btn-ghost btn-sm" onclick="applyPreset('credit_rush')">Кредитная лихорадка</button>
+        <button class="btn btn-ghost btn-sm" onclick="applyPreset('rare_week')">Неделя редкостей</button>
+        <button class="btn btn-ghost btn-sm" onclick="applyPreset('creature_invasion')">Нашествие тварей</button>
+        <button class="btn btn-ghost btn-sm" onclick="applyPreset('artifact_hunt')">Охота за артефактами</button>
+        <button class="btn btn-ghost btn-sm" onclick="applyPreset('gold_rush')">Золотая лихорадка</button>
+      </div>
+    </div>
+
+    <!-- Create form -->
+    <div style="background:var(--bg3);border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="display:grid;grid-template-columns:1fr 100px;gap:8px;margin-bottom:10px">
+        <div style="grid-column:span 2">
+          <div class="form-label">Иконка</div>
+          <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+            <input class="form-input" id="ev-icon" placeholder="🎉" style="width:44px;text-align:center;font-size:18px" oninput="document.getElementById('ev-icon-pre').textContent=this.value||'🎉'">
+            <span id="ev-icon-pre" style="font-size:24px;margin:0 4px">🎉</span>
+            <button class="btn btn-sm" onclick="pickIcon('ev-icon','ev-icon-pre','🎉')">🎉</button>
+            <button class="btn btn-sm" onclick="pickIcon('ev-icon','ev-icon-pre','⭐')">⭐</button>
+            <button class="btn btn-sm" onclick="pickIcon('ev-icon','ev-icon-pre','🔥')">🔥</button>
+            <button class="btn btn-sm" onclick="pickIcon('ev-icon','ev-icon-pre','🌌')">🌌</button>
+            <button class="btn btn-sm" onclick="pickIcon('ev-icon','ev-icon-pre','💫')">💫</button>
+            <button class="btn btn-sm" onclick="pickIcon('ev-icon','ev-icon-pre','🪐')">🪐</button>
+            <button class="btn btn-sm" onclick="pickIcon('ev-icon','ev-icon-pre','👾')">👾</button>
+            <button class="btn btn-sm" onclick="pickIcon('ev-icon','ev-icon-pre','💎')">💎</button>
+            <button class="btn btn-sm" onclick="pickIcon('ev-icon','ev-icon-pre','🐉')">🐉</button>
+            <button class="btn btn-sm" onclick="pickIcon('ev-icon','ev-icon-pre','🚀')">🚀</button>
+          </div>
+        </div>
+        <div>
+          <div class="form-label">Название</div>
+          <input class="form-input" id="ev-title" placeholder="Название события">
+        </div>
+        <div>
+          <div class="form-label">Часов</div>
+          <input class="form-input" id="ev-hours" type="number" value="24" min="1">
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <div class="form-label">Описание</div>
+        <textarea class="form-input" id="ev-desc" rows="3" placeholder="Описание события для игроков" style="resize:vertical"></textarea>
+      </div>
+
+      <!-- Effects builder -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="form-label" style="margin:0">Эффекты</div>
+        <button class="btn btn-ghost btn-sm" onclick="addEffect()">+ Добавить эффект</button>
+      </div>
+      <div id="effects-list"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:10px" id="btn-create-event" onclick="submitNewEvent()">Создать событие</button>
+    </div>
+
+    <!-- DB check button -->
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn btn-secondary" style="flex:1;font-size:12px" onclick="dbCheck()">Диагностика БД</button>
+    </div>
+    <div id="dbCheckResult" style="font-size:11px;color:var(--text2);margin-bottom:8px"></div>
+    <!-- Active events -->
+    <div id="eventsList"><div class="loading">Загрузка...</div></div>
+  </div>
+</div>
+
+<!-- DB Backup Modal -->
+<div class="modal-bg" id="dbBackupModal" style="display:none">
+  <div class="modal" style="width:700px;max-width:95vw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0">DB Backup & Restore</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeDbBackup()">✕</button>
+    </div>
+
+    <div style="background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div class="form-label" style="margin-bottom:8px">Полный бэкап</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
+        Выгружается полный SQL-дамп базы: структура, данные, индексы, последовательности, функции и триггеры.
+      </div>
+      <button class="btn btn-success" id="dbBackupBtn" onclick="createDbBackup()">Скачать полный бэкап (.sql)</button>
+      <div id="dbBackupStatus" class="hint" style="margin-top:8px"></div>
+    </div>
+
+    <div style="background:rgba(252,129,129,0.09);border:1px solid rgba(252,129,129,0.35);border-radius:12px;padding:14px">
+      <div class="form-label" style="margin-bottom:8px;color:var(--red)">Восстановление (опасно)</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
+        Восстановление полностью перезапишет текущее состояние базы.
+        Для защиты от случайного клика нужно: выбрать файл, ввести фразу подтверждения и пройти финальный confirm.
+      </div>
+
+      <div class="form-row" style="margin-bottom:10px">
+        <label class="form-label">Файл бэкапа .sql</label>
+        <input class="form-input" id="dbRestoreFile" type="file" accept=".sql,.txt" onchange="onRestoreFileSelected(this)">
+        <div id="dbRestoreFileInfo" class="hint">Файл не выбран</div>
+      </div>
+
+      <div class="form-row" style="margin-bottom:10px">
+        <label class="form-label">Фраза подтверждения</label>
+        <input class="form-input" id="dbRestoreConfirmText" placeholder="RESTORE STARLOOT DB">
+      </div>
+
+      <button class="btn btn-danger" id="dbRestoreBtn" onclick="restoreFromBackup()">Восстановить базу</button>
+      <div id="dbRestoreStatus" class="hint" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  console.error('[GLOBAL ERROR]', msg, 'at', src, line, col, err);
+  try { document.title = 'JS Error: ' + msg; } catch(x) {}
+};
+const API = 'http://localhost:8765';
+
+const TR = {
+  en: {
+    players:'Players', today:'Today', activeExps:'Active exps', nftPending:'NFT pending',
+    viaLinks:'Via links', bans:'Bans',
+    linksChats:'Links & Chats', settings:'Settings', events:'Events',
+    tournaments:'Tournaments', referrals:'Referrals', quests:'Quests',
+    news:'News', prestige:'Prestige', backups:'Backups', analytics:'Analytics',
+    level:'Level', xp:'XP', credits:'Credits', crystals:'Crystals',
+    prestigeStat:'Prestige', expeditions:'Expeditions', finds:'Finds',
+    sold:'Sold', starsSpent:'Stars spent',
+    actionsSection:'Actions', buffsSection:'Active Buffs', modulesSection:'Ship Modules',
+    nftSection:'NFT Notifications', prestigeSection:'Prestige',
+    expsSection:'Recent Expeditions', invSection:'Inventory',
+    donationsSection:'Donations', starsTxSection:'Stars Transactions',
+    balanceCard:'Balance', xpLevelCard:'XP / Level', speedUpCard:'Speed Up',
+    factionRepCard:'Faction Rep', prestigeCard:'Prestige Level',
+    nftCard:'NFT (force next)', forceRarityCard:'Force Rarity', forceTypeCard:'Force Find Type',
+    prestigeHistory:'Prestige History', horizonLabel:'Horizon', dateLabel:'Date',
+    playerLabel:'Player', noPrestige:'No prestige events yet', goTo:'Go to', page:'Page',
+    horizon1:'First Horizon', horizon2:'Second Horizon', horizon3:'Third Horizon',
+    noPrestigeTag:'No prestige',
+    inProgress:'In progress', waiting:'Ready', collected:'Collected',
+    nftIssued:'Issued', nftPendingTag:'Pending',
+    modScanner:'Scanner', modCargo:'Cargo', modCapsule:'Capsule',
+    noBuffs:'No active buffs', noExpeditions:'No expeditions',
+    selectPlayer:'Select a player from the list',
+    cooldownUntil:'Cooldown until',
+    loadPrestige:'Load prestige history', loadInventory:'Load inventory',
+    loadDonations:'Load donations', loadStars:'Load transactions',
+    clearInventory:'Clear', inInventory:'In inventory', soldTab:'Sold', allTab:'All',
+    moduleLevel:'Lvl.',
+    setBan:'Ban', unban:'Unban',
+    hideLeaderboard:'Hide from rankings', showLeaderboard:'Show in rankings',
+    tosReset:'Show referral/ToS window', resetCooldown:'Reset cooldown',
+    give:'+ Give', take:'− Take',
+    speedExpedition:'Expedition', speedTravel:'Universe travel',
+    setRep:'Set', changeRep:'Change ±', giveStars:'Give',
+    forceNft:'Force NFT container', force:'Force',
+    giveBuff:'+ Give buff', buffHours:'Hours', buffUses:'Uses',
+    searchPlaceholder:'Search by username or ID...',
+    rarityMeta:'Rarity', typeMeta:'Type',
+    createdAt:'since', lastActive:'last active',
+    nftSetCard:'Force Find Type',
+  },
+  ru: {
+    players:'Игроков', today:'Сегодня', activeExps:'Активных эксп', nftPending:'NFT ожидают',
+    viaLinks:'По ссылкам', bans:'Банов',
+    linksChats:'Ссылки и чаты', settings:'Настройки', events:'События',
+    tournaments:'Турниры', referrals:'Рефералы', quests:'Квесты',
+    news:'Новости', prestige:'Престиж', backups:'Бэкапы', analytics:'Аналитика',
+    level:'Уровень', xp:'XP', credits:'Кредиты', crystals:'Кристаллы',
+    prestigeStat:'Престиж', expeditions:'Экспедиций', finds:'Находок',
+    sold:'Продано', starsSpent:'Stars потрачено',
+    actionsSection:'Действия', buffsSection:'Активные баффы', modulesSection:'Модули корабля',
+    nftSection:'NFT уведомления', prestigeSection:'Престиж',
+    expsSection:'Последние экспедиции', invSection:'Инвентарь',
+    donationsSection:'Донаты', starsTxSection:'Транзакции Stars',
+    balanceCard:'Накрутка баланса', xpLevelCard:'XP / Уровень', speedUpCard:'Ускорение таймеров',
+    factionRepCard:'Репутация фракций', prestigeCard:'Уровень Престижа',
+    nftCard:'NFT (форс след. экспедиции)', forceRarityCard:'Форс редкости', forceTypeCard:'Форс типа',
+    prestigeHistory:'История Престижей', horizonLabel:'Горизонт', dateLabel:'Дата',
+    playerLabel:'Игрок', noPrestige:'Ни одного престижа пока нет', goTo:'Перейти', page:'Стр.',
+    horizon1:'Первый Горизонт', horizon2:'Второй Горизонт', horizon3:'Третий Горизонт',
+    noPrestigeTag:'Нет престижа',
+    inProgress:'В пути', waiting:'Ждёт', collected:'Собрано',
+    nftIssued:'Выдано', nftPendingTag:'Ожидает',
+    modScanner:'Сканер', modCargo:'Трюм', modCapsule:'Капсула',
+    noBuffs:'Нет активных баффов', noExpeditions:'Нет экспедиций',
+    selectPlayer:'Выбери игрока из списка',
+    cooldownUntil:'Кулдаун до',
+    loadPrestige:'Загрузить историю престижа', loadInventory:'Загрузить инвентарь',
+    loadDonations:'Загрузить донаты', loadStars:'Загрузить транзакции',
+    clearInventory:'Очистить', inInventory:'В наличии', soldTab:'Продано', allTab:'Все',
+    moduleLevel:'Ур.',
+    setBan:'Забанить', unban:'Разбанить',
+    hideLeaderboard:'Скрыть из топов', showLeaderboard:'Показать в топах',
+    tosReset:'Показать окно реферала/ToS', resetCooldown:'Сбросить кулдаун',
+    give:'+ Выдать', take:'− Снять',
+    speedExpedition:'Экспедицию', speedTravel:'Перелёт между вселенными',
+    setRep:'Установить', changeRep:'Изменить ±', giveStars:'Выдать',
+    forceNft:'Форс NFT контейнер', force:'Форс',
+    giveBuff:'+ Выдать бафф', buffHours:'Часов', buffUses:'Использований',
+    searchPlaceholder:'Поиск по нику или ID...',
+    rarityMeta:'Редкость', typeMeta:'Тип',
+    createdAt:'с', lastActive:'был',
+    nftSetCard:'Форс типа находки',
+  },
+};
+let _lang = localStorage.getItem('adminLang') || 'en';
+function t(k) { return TR[_lang]?.[k] ?? TR.en?.[k] ?? k; }
+function setLang(l) {
+  _lang = l;
+  localStorage.setItem('adminLang', l);
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  const btnRu = document.getElementById('lang-btn-ru');
+  const btnEn = document.getElementById('lang-btn-en');
+  if (btnRu) btnRu.style.fontWeight = l === 'ru' ? '700' : '400';
+  if (btnEn) btnEn.style.fontWeight = l === 'en' ? '700' : '400';
+}
+
+let allPlayers = [];
+let currentUserId = null;
+let cachedPlayerData = null;
+let currentFactionRepMap = {};
+let _restoreSqlPayload = '';
+
+// Auth token — loaded from config on init
+let _authToken = sessionStorage.getItem('admin_token') || '';
+
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = (type==='ok'?'✓ ':'✗ ') + msg;
+  el.className = `toast show ${type}`;
+  setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+function authHeaders() {
+  const h = {'Content-Type':'application/json'};
+  if (_authToken) {
+    h['Authorization'] = `Bearer ${_authToken}`;
+  }
+  return h;
+}
+
+async function api(path, method='GET', body=null) {
+  const opts = {method, headers: authHeaders()};
+  if (body) opts.body = JSON.stringify(body);
+  let r = await fetch(API+path, opts);
+  if (r.status === 401) {
+    const prevToken = _authToken;
+    promptLogin();
+    // Retry once after user enters secret to avoid manual reload.
+    if (_authToken && _authToken !== prevToken) {
+      const retryOpts = { ...opts, headers: authHeaders() };
+      r = await fetch(API+path, retryOpts);
+    }
+    if (r.status === 401) throw new Error('Unauthorized');
+  }
+  const raw = await r.text();
+  const ct = (r.headers.get('content-type') || '').toLowerCase();
+  const isJson = ct.includes('application/json');
+
+  if (!r.ok) {
+    let errMsg = `HTTP ${r.status}`;
+    if (isJson) {
+      try {
+        const payload = JSON.parse(raw || '{}');
+        errMsg = payload.error || payload.message || errMsg;
+      } catch {}
+    } else if (raw) {
+      errMsg = raw;
+    }
+    throw new Error(errMsg);
+  }
+
+  if (!raw) return {};
+  if (isJson) return JSON.parse(raw);
+  return { ok: true, raw };
+}
+
+function promptLogin() {
+  const token = prompt('Введите adminSecret для доступа к панели:');
+  if (token) { _authToken = token; sessionStorage.setItem('admin_token', token); }
+}
+
+// ── DB Backup / Restore ─────────────────────────────────────────────────────
+function showDbBackup() {
+  document.getElementById('dbBackupModal').style.display = 'flex';
+  document.getElementById('dbBackupStatus').textContent = '';
+  document.getElementById('dbRestoreStatus').textContent = '';
+  document.getElementById('dbRestoreConfirmText').value = '';
+  document.getElementById('dbRestoreFileInfo').textContent = _restoreSqlPayload
+    ? `Файл загружен в память (${Math.round(_restoreSqlPayload.length / 1024)} KB)`
+    : 'Файл не выбран';
+}
+function closeDbBackup() { document.getElementById('dbBackupModal').style.display = 'none'; }
+
+function parseAttachmentFilename(headerValue) {
+  if (!headerValue) return null;
+  const m = headerValue.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+  const raw = m ? (m[1] || m[2]) : null;
+  if (!raw) return null;
+  try { return decodeURIComponent(raw); } catch { return raw; }
+}
+
+async function createDbBackup() {
+  const btn = document.getElementById('dbBackupBtn');
+  const status = document.getElementById('dbBackupStatus');
+  btn.disabled = true;
+  status.textContent = 'Создаю бэкап...';
+  try {
+    const r = await fetch(API + '/api/db/backup', { method: 'GET', headers: authHeaders() });
+    if (!r.ok) {
+      const payload = await r.json().catch(() => ({}));
+      throw new Error(payload.error || `HTTP ${r.status}`);
+    }
+    const blob = await r.blob();
+    const filename = parseAttachmentFilename(r.headers.get('content-disposition'))
+      || `starloot_backup_${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.sql`;
+
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(href);
+
+    status.textContent = `Готово: ${filename}`;
+    toast('Бэкап скачан');
+  } catch (e) {
+    status.textContent = 'Ошибка: ' + e.message;
+    toast('Ошибка бэкапа: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function onRestoreFileSelected(input) {
+  const info = document.getElementById('dbRestoreFileInfo');
+  const status = document.getElementById('dbRestoreStatus');
+  status.textContent = '';
+  _restoreSqlPayload = '';
+
+  const file = input?.files?.[0];
+  if (!file) {
+    info.textContent = 'Файл не выбран';
+    return;
+  }
+
+  try {
+    const text = await file.text();
+    if (!text || text.trim().length < 20) throw new Error('Файл слишком короткий или пустой');
+    _restoreSqlPayload = text;
+    info.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+  } catch (e) {
+    info.textContent = 'Ошибка чтения файла';
+    toast('Не удалось прочитать файл: ' + e.message, 'err');
+  }
+}
+
+async function restoreFromBackup() {
+  const status = document.getElementById('dbRestoreStatus');
+  const btn = document.getElementById('dbRestoreBtn');
+  const phrase = (document.getElementById('dbRestoreConfirmText').value || '').trim();
+  const requiredPhrase = 'RESTORE STARLOOT DB';
+
+  if (!_restoreSqlPayload) {
+    toast('Сначала выбери файл бэкапа', 'err');
+    return;
+  }
+  if (phrase !== requiredPhrase) {
+    toast(`Введи фразу: ${requiredPhrase}`, 'err');
+    return;
+  }
+
+  const finalConfirm = confirm('Final confirmation: restore will overwrite the current database state. Continue?');
+  if (!finalConfirm) return;
+
+  btn.disabled = true;
+  status.textContent = 'Идет восстановление...';
+  try {
+    const result = await api('/api/db/restore', 'POST', {
+      sql: _restoreSqlPayload,
+      confirmationText: phrase,
+      acknowledgeDestructive: true,
+    });
+    if (!result.ok) throw new Error(result.error || 'Неизвестная ошибка восстановления');
+    status.textContent = 'Восстановление завершено';
+    toast('База восстановлена');
+    await loadStats();
+    await loadPlayers();
+  } catch (e) {
+    status.textContent = 'Ошибка: ' + e.message;
+    toast('Ошибка восстановления: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Config ───────────────────────────────────────────────────────────────────
+async function openConfig() {
+  const cfg = await api('/api/config');
+  document.getElementById('cfg-url').value = cfg.connectionString || '';
+  document.getElementById('cfg-pg-bin').value = cfg.pgBinPath || '';
+  document.getElementById('cfg-backend').value = cfg.backendUrl || 'https://starloot-production.up.railway.app';
+  document.getElementById('cfg-secret').value = cfg.adminSecret || '';
+  document.getElementById('cfg-bot').value = cfg.botToken || '';
+  document.getElementById('cfg-admin-id').value = cfg.adminChatId || '';
+  document.getElementById('cfg-game-chat').value = cfg.gameChatId || '';
+  document.getElementById('cfg-announce-target').value = cfg.announceTarget === 'admin' ? 'admin' : 'game';
+  document.getElementById('cfg-backend').value = cfg.backendUrl || '';
+  document.getElementById('cfg-secret').value = cfg.adminSecret || '';
+  document.getElementById('configModal').style.display = 'flex';
+}
+function closeConfig() { document.getElementById('configModal').style.display = 'none'; }
+async function testAndSave() {
+  const connectionString = document.getElementById('cfg-url').value.trim();
+  const pgBinPath = document.getElementById('cfg-pg-bin').value.trim();
+  const botToken = document.getElementById('cfg-bot').value.trim();
+  const adminChatId = document.getElementById('cfg-admin-id').value.trim();
+  const gameChatId = document.getElementById('cfg-game-chat').value.trim();
+  const backendUrl = document.getElementById('cfg-backend').value.trim();
+  const adminSecret = document.getElementById('cfg-secret').value.trim();
+  const announceTarget = document.getElementById('cfg-announce-target').value;
+  if (!connectionString) { toast('Введи URL подключения', 'err'); return; }
+  const r = await api('/api/test', 'POST', { connectionString, pgBinPath, botToken, adminChatId, gameChatId, announceTarget, backendUrl, adminSecret });
+  if (r.ok) {
+    _authToken = adminSecret;
+    sessionStorage.setItem('admin_token', adminSecret);
+    toast('Подключено!'); closeConfig(); loadPlayers(); loadStats();
+  }
+  else toast(r.error || 'Ошибка подключения', 'err');
+}
+
+// ── Stats ────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  const s = await api('/api/stats');
+  if (s.error) return;
+  document.getElementById('s-users').textContent = s.total_users;
+  document.getElementById('s-active').textContent = s.active_today;
+  document.getElementById('s-exps').textContent = s.active_expeditions;
+  document.getElementById('s-nfts').textContent = s.pending_nfts;
+  document.getElementById('s-ad').textContent = s.ad_starts || 0;
+  document.getElementById('s-banned').textContent = s.banned_users;
+}
+
+// ── Player list ───────────────────────────────────────────────────────────────
+async function loadPlayers() {
+  const data = await api('/api/players');
+  if (data.error) { toast(data.error, 'err'); return; }
+  allPlayers = data;
+  renderList(data);
+}
+
+function renderList(players) {
+  const el = document.getElementById('playerList');
+  if (!players.length) { el.innerHTML = '<div class="empty">Игроков не найдено</div>'; return; }
+  el.innerHTML = players.map(p => {
+    const name = p.username ? '@'+p.username : (p.first_name || 'Без имени');
+    const baseInitial = name[0] === '@' ? (name[1] || '?') : (name[0] || '?');
+    const initial = String(baseInitial).toUpperCase();
+    return `<div class="player-item${p.is_banned?' banned':''}${currentUserId==p.id?' active':''}" onclick="selectPlayer(${p.id})">
+      <div class="player-avatar">${initial}</div>
+      <div class="player-info">
+        <div class="player-name">${name}${p.is_banned?' [banned]':''}</div>
+        <div class="player-meta">${Number(p.credits).toLocaleString()} кред · ${p.total_expeditions} эксп</div>
+      </div>
+      <div class="level-badge">Ур.${p.level}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterPlayers() {
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  renderList(q ? allPlayers.filter(p =>
+    (p.username||'').toLowerCase().includes(q) ||
+    (p.first_name||'').toLowerCase().includes(q) ||
+    String(p.id).includes(q)
+  ) : allPlayers);
+}
+
+// ── Player detail ─────────────────────────────────────────────────────────────
+async function selectPlayer(id, useCache=false) {
+  currentUserId = id;
+  if (!useCache) {
+    document.getElementById('main').innerHTML = '<div class="loading">Загрузка...</div>';
+    const data = await api(`/api/player/${id}`);
+    if (data.error) { toast(data.error, 'err'); return; }
+    cachedPlayerData = data;
+    renderPlayer(data);
+  } else if (cachedPlayerData) {
+    renderPlayer(cachedPlayerData);
+  }
+  document.querySelectorAll('.player-item').forEach(el => {
+    el.classList.toggle('active', el.onclick.toString().includes(`(${id})`));
+  });
+}
+
+function fmtDate(val) {
+  if (!val) return '—';
+  const d = new Date(val);
+  if (isNaN(d)) return '—';
+  return d.toLocaleString('ru-RU');
+}
+
+function buffStatusHtml(b) {
+  const now = Date.now();
+  if (b.expires_at) {
+    const exp = new Date(b.expires_at);
+    if (isNaN(exp)) return '<span class="buff-status expired">Неверная дата</span>';
+    if (exp < now) return `<span class="buff-status expired">Истёк ${exp.toLocaleString('ru-RU')}</span>`;
+    return `<span class="buff-status active">До ${exp.toLocaleString('ru-RU')}</span>`;
+  }
+  if (b.uses_remaining !== null && b.uses_remaining !== undefined) {
+    return `<span class="buff-status active">Осталось: ${b.uses_remaining} исп.</span>`;
+  }
+  return '<span class="buff-status">—</span>';
+}
+
+const buffNames = {
+  signal_amplifier: 'Усилитель сигнала',
+  turbo_engine: 'Турбо-двигатель',
+  insurance_policy: 'Страховой полис',
+  pirate_shield: 'Щит от пиратов',
+  cartographer: 'Картограф',
+  quantum_locator: 'Квантовый локатор',
+  force_rarity: 'Форс редкости',
+  force_type: 'Форс типа',
+};
+
+function buildFactionReputationMap(reputations) {
+  const map = {};
+  (reputations || []).forEach((r) => {
+    map[r.faction_id] = Number(r.reputation) || 0;
+  });
+  return map;
+}
+
+function getFactionOptionsHtml(repMap) {
+  const ordered = ['bioengineers', 'tech_institute', 'industrial_league', 'navigators_order', 'black_market', 'chroniclers', 'void_seekers', 'resonators', 'haulers'];
+  const known = new Set(ordered);
+  const extra = Object.keys(repMap || {}).filter((id) => !known.has(id)).sort();
+  return [...ordered, ...extra]
+    .map((id) => {
+      const fm = FACTION_META[id] || { icon: '', label: id };
+      return `<option value="${id}">${fm.icon} ${fm.label}</option>`;
+    })
+    .join('');
+}
+
+function getFactionSummaryHtml(repMap) {
+  const keys = Object.keys(repMap || {});
+  if (!keys.length) return 'Пока нет значений. Выбери фракцию и установи репутацию.';
+  return keys
+    .sort()
+    .map((id) => {
+      const fm = FACTION_META[id] || { icon: '', label: id };
+      const rep = Number(repMap[id]) || 0;
+      const color = rep >= 500 ? 'var(--green)' : rep < 0 ? 'var(--red)' : 'var(--text2)';
+      return `<span style="white-space:nowrap;color:${color}">${fm.icon} ${fm.label}: <b>${rep}</b></span>`;
+    })
+    .join(' · ');
+}
+
+function updateFactionRepHint() {
+  const sel = document.getElementById('act-rep-faction');
+  const hint = document.getElementById('act-rep-current');
+  if (!sel || !hint) return;
+  const factionId = sel.value;
+  const rep = Number(currentFactionRepMap[factionId]) || 0;
+  const fm = FACTION_META[factionId] || { icon: '', label: factionId };
+  hint.textContent = `Текущая: ${fm.icon} ${fm.label} = ${rep}`;
+}
+
+function parseRepInputValue() {
+  const input = document.getElementById('act-rep-value');
+  const raw = input?.value;
+  if (raw === undefined || raw === null || raw === '') return null;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+async function setFactionReputation(userId) {
+  const factionId = document.getElementById('act-rep-faction')?.value;
+  const value = parseRepInputValue();
+  if (!factionId) { toast('Выбери фракцию', 'err'); return; }
+  if (value === null) { toast('Введи целое значение репутации', 'err'); return; }
+  const r = await api('/api/admin/action', 'POST', { action: 'set_reputation', userId, value, value2: factionId });
+  if (r.ok) { toast(r.message || 'Репутация обновлена'); selectPlayer(userId); loadPlayers(); }
+  else toast(r.error || 'Ошибка', 'err');
+}
+
+async function addFactionReputation(userId) {
+  const factionId = document.getElementById('act-rep-faction')?.value;
+  const value = parseRepInputValue();
+  if (!factionId) { toast('Выбери фракцию', 'err'); return; }
+  if (value === null || value === 0) { toast('Введи изменение репутации (не 0)', 'err'); return; }
+  const r = await api('/api/admin/action', 'POST', { action: 'add_reputation', userId, value, value2: factionId });
+  if (r.ok) { toast(r.message || 'Репутация обновлена'); selectPlayer(userId); loadPlayers(); }
+  else toast(r.error || 'Ошибка', 'err');
+}
+
+function renderPlayer({ user, expeditions, inventory, buffs, modules, nfts, reputations = [] }) {
+  const name = user.username ? '@'+user.username : (user.first_name||'Без имени');
+  const baseInitial = name[0] === '@' ? (name[1] || '?') : (name[0] || '?');
+  const initial = String(baseInitial).toUpperCase();
+  currentFactionRepMap = buildFactionReputationMap(reputations);
+  const factionOptionsHtml = getFactionOptionsHtml(currentFactionRepMap);
+  const factionSummaryHtml = getFactionSummaryHtml(currentFactionRepMap);
+
+  document.getElementById('main').innerHTML = `
+    <div class="player-header">
+      <div class="player-header-top">
+        <div class="player-big-avatar">${initial}</div>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="player-big-name">${name}</div>
+            ${user.is_banned?'<span class="banned-badge">BANNED</span>':''}
+          </div>
+          <div class="player-big-id mono">ID: ${user.id} · ${t('createdAt')} ${fmtDate(user.created_at)} · ${t('lastActive')}: ${fmtDate(user.last_active_at)}</div>
+          ${user.expedition_cooldown_until && new Date(user.expedition_cooldown_until)>Date.now()
+            ?`<div style="color:var(--yellow);font-size:12px;margin-top:4px">${t('cooldownUntil')} ${fmtDate(user.expedition_cooldown_until)}</div>`:''}
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          ${user.is_banned
+            ?`<button class="btn btn-success btn-sm" onclick="doAction('unban','${user.id}')">✓ ${t('unban')}</button>`
+            :`<button class="btn btn-danger btn-sm" onclick="doBan('${user.id}')">${t('setBan')}</button>`}
+          ${user.hidden_from_leaderboards
+            ?`<button class="btn btn-success btn-sm" onclick="doAction('show_in_leaderboards','${user.id}')">${t('showLeaderboard')}</button>`
+            :`<button class="btn btn-warning btn-sm" onclick="doAction('hide_from_leaderboards','${user.id}')">${t('hideLeaderboard')}</button>`}
+          <button class="btn btn-purple btn-sm" onclick="doAction('reset_tos_consent','${user.id}')">${t('tosReset')}</button>
+          ${user.expedition_cooldown_until && new Date(user.expedition_cooldown_until)>Date.now()
+            ?`<button class="btn btn-warning btn-sm" onclick="doAction('reset_cooldown','${user.id}')">↺ ${t('resetCooldown')}</button>`:''}
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-card-val">${user.level}</div><div class="stat-card-label">${t('level')}</div></div>
+        <div class="stat-card"><div class="stat-card-val">${Number(user.xp).toLocaleString()}</div><div class="stat-card-label">${t('xp')}</div></div>
+        <div class="stat-card"><div class="stat-card-val">${Number(user.credits).toLocaleString()}</div><div class="stat-card-label">${t('credits')}</div></div>
+        <div class="stat-card"><div class="stat-card-val">${Number(user.crystals || 0).toLocaleString()}</div><div class="stat-card-label">${t('crystals')}</div></div>
+        <div class="stat-card"><div class="stat-card-val" style="color:var(--purple)">${user.prestige_level > 0 ? '✦'.repeat(user.prestige_level) + ' P' + user.prestige_level : '—'}</div><div class="stat-card-label">${t('prestigeStat')}</div></div>
+        <div class="stat-card"><div class="stat-card-val">${user.stars_balance}</div><div class="stat-card-label">Stars</div></div>
+        <div class="stat-card"><div class="stat-card-val">${user.total_expeditions}</div><div class="stat-card-label">${t('expeditions')}</div></div>
+        <div class="stat-card"><div class="stat-card-val">${user.total_finds}</div><div class="stat-card-label">${t('finds')}</div></div>
+        <div class="stat-card"><div class="stat-card-val">${user.total_sold}</div><div class="stat-card-label">${t('sold')}</div></div>
+        <div class="stat-card"><div class="stat-card-val">${user.total_stars_spent}</div><div class="stat-card-label">${t('starsSpent')}</div></div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="section-title">${t('actionsSection')}</div>
+    <div class="actions-grid">
+      <div class="action-card">
+        <h4>${t('balanceCard')}</h4>
+        <div class="action-input-row">
+          <select class="action-input" id="act-balance-currency">
+            <option value="credits">Кредиты</option>
+            <option value="crystals">Кристаллы</option>
+          </select>
+          <input class="action-input" id="act-balance" type="number" placeholder="Количество">
+        </div>
+        <div class="action-input-row">
+          <button class="btn btn-success btn-sm" style="flex:1" onclick="doBalanceAction('${user.id}','give')">${t('give')}</button>
+          <button class="btn btn-danger btn-sm" style="flex:1" onclick="doBalanceAction('${user.id}','take')">${t('take')}</button>
+        </div>
+      </div>
+      <div class="action-card">
+        <h4>${t('xpLevelCard')}</h4>
+        <div class="action-input-row">
+          <input class="action-input" id="act-xp" type="number" placeholder="XP">
+          <button class="btn btn-success btn-sm" onclick="doAction('give_xp','${user.id}',+document.getElementById('act-xp').value)">+XP</button>
+        </div>
+        <div class="action-input-row">
+          <input class="action-input" id="act-level" type="number" placeholder="Level 1-20" min="1" max="20">
+          <button class="btn btn-warning btn-sm" onclick="doAction('set_level','${user.id}',+document.getElementById('act-level').value)">${t('setLevel')}</button>
+        </div>
+      </div>
+      <div class="action-card">
+        <h4>${t('speedUpCard')}</h4>
+        <div class="action-input-row">
+          <button class="btn btn-warning btn-sm" style="flex:1" onclick="doAction('speedup_active_expedition','${user.id}')">${t('speedExpedition')}</button>
+        </div>
+        <div class="action-input-row">
+          <button class="btn btn-purple btn-sm" style="flex:1" onclick="doAction('speedup_universe_travel','${user.id}')">${t('speedTravel')}</button>
+        </div>
+      </div>
+      <div class="action-card">
+        <h4>${t('factionRepCard')}</h4>
+        <div class="action-input-row">
+          <select class="action-input" id="act-rep-faction" onchange="updateFactionRepHint()">
+            ${factionOptionsHtml}
+          </select>
+          <input class="action-input" id="act-rep-value" type="number" placeholder="Напр. 500 или -50">
+        </div>
+        <div class="action-input-row">
+          <button class="btn btn-success btn-sm" style="flex:1" onclick="setFactionReputation('${user.id}')">${t('setRep')}</button>
+          <button class="btn btn-warning btn-sm" style="flex:1" onclick="addFactionReputation('${user.id}')">${t('changeRep')}</button>
+        </div>
+        <div class="hint" id="act-rep-current">${factionSummaryHtml}</div>
+      </div>
+      <div class="action-card">
+        <h4>Stars</h4>
+        <div class="action-input-row">
+          <input class="action-input" id="act-stars" type="number" placeholder="Stars amount">
+          <button class="btn btn-success btn-sm" onclick="doAction('give_stars','${user.id}',+document.getElementById('act-stars').value)">${t('giveStars')}</button>
+        </div>
+      </div>
+      <div class="action-card">
+        <h4>${t('prestigeCard')}</h4>
+        <div class="action-input-row">
+          <select class="action-input" id="act-prestige-level">
+            <option value="0">0 — ${t('noPrestigeTag')}</option>
+            <option value="1">Ⅰ — ${t('horizon1')}</option>
+            <option value="2">Ⅱ — ${t('horizon2')}</option>
+            <option value="3">Ⅲ — ${t('horizon3')}</option>
+          </select>
+          <button class="btn btn-purple btn-sm" onclick="setPrestigeLevel('${user.id}')">${t('setRep')}</button>
+        </div>
+        <div class="hint">Sets prestige_level without resetting progress</div>
+      </div>
+      <div class="action-card">
+        <h4>${t('nftCard')}</h4>
+        <div class="action-input-row">
+          <button class="btn btn-purple btn-sm" style="flex:1" onclick="doAction('force_next_type','${user.id}','nft_container')">${t('forceNft')}</button>
+        </div>
+        <div class="hint">Next expedition will yield NFT container (mythical)</div>
+      </div>
+      <div class="action-card">
+        <h4>${t('forceRarityCard')}</h4>
+        <div class="action-input-row">
+          <select class="action-input" id="act-rarity">
+            <option value="exotic">Exotic (U2)</option>
+            <option value="ancient">Ancient (U2)</option>
+            <option value="relic">Relic (U2)</option>
+            <option value="hybrid">Hybrid (U2)</option>
+            <option value="singularity">Singularity (U2)</option>
+            <option value="common">Common</option>
+            <option value="rare">Rare</option>
+            <option value="epic">Epic</option>
+            <option value="legendary">Legendary</option>
+            <option value="mythical">Mythical</option>
+          </select>
+          <button class="btn btn-warning btn-sm" onclick="doAction('force_next_rarity','${user.id}',document.getElementById('act-rarity').value)">${t('force')}</button>
+        </div>
+        <div class="hint">Forces next expedition rarity</div>
+      </div>
+      <div class="action-card">
+        <h4>${t('forceTypeCard')}</h4>
+        <div class="action-input-row">
+          <select class="action-input" id="act-type">
+            <option value="echo">Эхо (U2)</option>
+            <option value="relic">Реликвия (U2)</option>
+            <option value="entity">Сущность (U2)</option>
+            <option value="rift">Разлом (U2)</option>
+            <option value="asteroid">Астероид</option>
+            <option value="debris">Мусор</option>
+            <option value="artifact">Артефакт</option>
+            <option value="creature">Существо</option>
+            <option value="anomaly">Аномалия</option>
+            <option value="nft_container">NFT контейнер</option>
+          </select>
+          <button class="btn btn-warning btn-sm" onclick="doAction('force_next_type','${user.id}',document.getElementById('act-type').value)">${t('force')}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buffs -->
+    <div class="section-title">${t('buffsSection')}</div>
+    <div style="margin-bottom:12px">
+      <div class="action-card" style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px">
+          <div class="form-label">Тип баффа</div>
+          <select class="action-input" id="new-buff-type" onchange="updateBuffForm()">
+            <option value="signal_amplifier">Усилитель сигнала</option>
+            <option value="turbo_engine">Турбо-двигатель</option>
+            <option value="insurance_policy">Страховой полис</option>
+            <option value="pirate_shield">Щит от пиратов</option>
+            <option value="cartographer">Картограф</option>
+            <option value="quantum_locator">Квантовый локатор</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:100px">
+          <div class="form-label" id="buff-val-label">Часов</div>
+          <input class="action-input" id="new-buff-val" type="number" value="2" min="1">
+        </div>
+        <button class="btn btn-purple btn-sm" onclick="giveBuff('${user.id}')">+ Выдать бафф</button>
+      </div>
+    </div>
+
+    ${buffs.length ? `
+    <div class="buff-list">
+      ${buffs.map(b => {
+        const isExpired = b.expires_at && new Date(b.expires_at) < Date.now();
+        const meta = b.metadata || {};
+        const metaStr = meta.rarity ? `${t('rarityMeta')}: ${meta.rarity}` : meta.findType ? `${t('typeMeta')}: ${meta.findType}` : '';
+        return `<div class="buff-card${isExpired?' expired':''}">
+          <div class="buff-type">${buffNames[b.buff_type]||b.buff_type}</div>
+          <div style="flex:1">${buffStatusHtml(b)}${metaStr?`<div class="buff-meta">${metaStr}</div>`:''}</div>
+          <button class="btn btn-danger btn-sm" onclick="deleteBuff('${b.id}','${user.id}')">✕</button>
+        </div>`;
+      }).join('')}
+    </div>` : `<div class="empty" style="margin-bottom:20px;padding:16px">${t('noBuffs')}</div>`}
+
+    <!-- Modules -->
+    ${modules.length ? `
+    <div class="section-title">${t('modulesSection')}</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Module</th><th>${t('level')}</th><th>Last upgrade</th></tr></thead>
+        <tbody>${modules.map(m=>`
+          <tr>
+            <td>${{scanner:t('modScanner'),engine:'Engine',cargo:t('modCargo'),capsule:t('modCapsule')}[m.module_type]||m.module_type}</td>
+            <td><span class="tag tag-blue">${t('moduleLevel')} ${m.level}</span></td>
+            <td>${fmtDate(m.upgraded_at)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
+
+    <!-- NFT -->
+    ${nfts.length ? `
+    <div class="section-title">${t('nftSection')}</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Type</th><th>${t('dateLabel')}</th><th>Status</th><th></th></tr></thead>
+        <tbody>${nfts.map(n=>`
+          <tr>
+            <td>${n.outcome_label}</td>
+            <td>${fmtDate(n.created_at)}</td>
+            <td>${n.admin_processed
+              ?`<span class="tag tag-green">${t('nftIssued')}</span>`
+              :`<span class="tag tag-yellow">${t('nftPendingTag')}</span>`}</td>
+            <td>${!n.admin_processed?`<button class="btn btn-success btn-sm" onclick="doAction('mark_nft_processed','${user.id}','${n.id}')">✓ Issued</button>`:''}
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
+
+    <!-- Prestige -->
+    <div class="section-title">${t('prestigeSection')}</div>
+    <div id="prestige-wrap" style="margin-bottom:20px">
+      <button class="btn btn-ghost btn-sm" onclick="loadPlayerPrestige('${user.id}')">${t('loadPrestige')}</button>
+    </div>
+
+    <!-- Expeditions -->
+    <div class="section-title">${t('expsSection')}</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Zone</th><th>Status</th><th>Type</th><th>Rarity</th><th>${t('credits')}</th><th>${t('dateLabel')}</th></tr></thead>
+        <tbody>${expeditions.length ? expeditions.map(e=>`
+          <tr>
+            <td>${e.zone_id}</td>
+            <td>${{in_progress:`<span class="tag tag-blue">${t('inProgress')}</span>`,completed:`<span class="tag tag-yellow">${t('waiting')}</span>`,collected:`<span class="tag tag-green">${t('collected')}</span>`}[e.status]||e.status}</td>
+            <td>${e.find_type||'—'}</td>
+            <td class="r-${e.rarity||'common'}">${e.rarity||'—'}</td>
+            <td>${e.final_credits!=null?Number(e.final_credits).toLocaleString():e.base_credits?'~'+Number(e.base_credits).toLocaleString():'—'}</td>
+            <td>${fmtDate(e.created_at)}</td>
+          </tr>`).join('') : `<tr><td colspan="6" class="empty">${t('noExpeditions')}</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Inventory (paginated) -->
+    <div class="section-title">${t('invSection')}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="tabs">
+        <button class="tab active" id="inv-tab-inv" onclick="loadInventoryPage('${user.id}','in_inventory',1)">${t('inInventory')}</button>
+        <button class="tab" id="inv-tab-sold" onclick="loadInventoryPage('${user.id}','sold',1)">${t('soldTab')}</button>
+        <button class="tab" id="inv-tab-all" onclick="loadInventoryPage('${user.id}','all',1)">${t('allTab')}</button>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="if(confirm('Clear inventory?')) doAction('clear_inventory','${user.id}')">${t('clearInventory')}</button>
+    </div>
+    <div id="inv-wrap">
+      <button class="btn btn-ghost btn-sm" onclick="loadInventoryPage('${user.id}','in_inventory',1)">${t('loadInventory')}</button>
+    </div>
+
+    <!-- Donations -->
+    <div class="section-title">${t('donationsSection')}</div>
+    <div id="donations-wrap" style="margin-bottom:20px">
+      <button class="btn btn-ghost btn-sm" onclick="loadDonations('${user.id}',1)">${t('loadDonations')}</button>
+    </div>
+
+    <!-- Stars Transactions (paginated) -->
+    <div class="section-title">${t('starsTxSection')}</div>
+    <div id="stars-tx-wrap" style="margin-bottom:20px">
+      <button class="btn btn-ghost btn-sm" onclick="loadStarsTx('${user.id}',1)">${t('loadStars')}</button>
+    </div>
+  `;
+
+  updateFactionRepHint();
+}
+
+// ── Paginated Inventory ──────────────────────────────────────────────────────
+let currentInvStatus = 'in_inventory';
+async function loadInventoryPage(userId, status, page) {
+  currentInvStatus = status || currentInvStatus;
+  const wrap = document.getElementById('inv-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading">Загрузка...</div>';
+  // Update tab active states
+  document.querySelectorAll('[id^="inv-tab-"]').forEach(el => el.classList.remove('active'));
+  const tabId = currentInvStatus === 'in_inventory' ? 'inv-tab-inv' : currentInvStatus === 'sold' ? 'inv-tab-sold' : 'inv-tab-all';
+  document.getElementById(tabId)?.classList.add('active');
+  try {
+    const data = await api(`/api/player/${userId}/inventory?status=${currentInvStatus}&page=${page}&limit=25`);
+    if (data.error) { wrap.innerHTML = `<div class="empty" style="color:var(--red)">${data.error}</div>`; return; }
+    if (!data.items?.length) { wrap.innerHTML = '<div class="empty" style="padding:16px">Пусто</div>'; return; }
+    const STATUS_LABELS = {in_inventory:'<span class="tag tag-blue">В наличии</span>',sold:'<span class="tag tag-green">Продано</span>',saved_coords:'<span class="tag tag-purple">Координаты</span>'};
+    wrap.innerHTML = `<div class="table-wrap"><table class="data-table">
+      <thead><tr><th>Тип</th><th>Название</th><th>Редкость</th><th>Статус</th><th>Цена</th><th>Дата</th></tr></thead>
+      <tbody>${data.items.map(i=>{
+        const od = i.object_data||{};
+        return `<tr>
+          <td>${i.find_type}</td>
+          <td style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${od.name||'—'}</td>
+          <td class="r-${i.rarity}">${i.rarity}</td>
+          <td>${STATUS_LABELS[i.status]||i.status}</td>
+          <td>${i.sold_for!=null?Number(i.sold_for).toLocaleString()+' кред':'—'}</td>
+          <td>${fmtDate(i.acquired_at)}</td>
+        </tr>`;
+      }).join('')}</tbody></table>
+      ${data.pages > 1 ? `<div class="pagination">
+        <button class="btn btn-ghost btn-sm" ${data.page<=1?'disabled':''} onclick="loadInventoryPage('${userId}','${currentInvStatus}',${data.page-1})">←</button>
+        <span class="page-info">${data.page} / ${data.pages} (${data.total})</span>
+        <button class="btn btn-ghost btn-sm" ${data.page>=data.pages?'disabled':''} onclick="loadInventoryPage('${userId}','${currentInvStatus}',${data.page+1})">→</button>
+      </div>` : `<div class="pagination"><span class="page-info">Всего: ${data.total}</span></div>`}
+    </div>`;
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty" style="color:var(--red)">Ошибка: ${e.message}</div>`;
+  }
+}
+
+function updateBuffForm() {
+  const type = document.getElementById('new-buff-type')?.value;
+  const label = document.getElementById('buff-val-label');
+  const input = document.getElementById('new-buff-val');
+  if (!label || !input) return;
+  const useBased = ['cartographer','quantum_locator'];
+  if (useBased.includes(type)) {
+    label.textContent = 'Использований';
+    input.value = 1;
+  } else {
+    label.textContent = 'Часов';
+    input.value = 2;
+  }
+}
+
+async function giveBuff(userId) {
+  const type = document.getElementById('new-buff-type').value;
+  const val = document.getElementById('new-buff-val').value;
+  const r = await api('/api/admin/action', 'POST', { action:'give_buff', userId, value:type, value2:val });
+  if (r.ok) { toast(r.message); selectPlayer(userId); }
+  else toast(r.error||'Ошибка', 'err');
+}
+
+async function deleteBuff(buffId, userId) {
+  const r = await api(`/api/buff/${buffId}`, 'DELETE');
+  if (r.ok) { toast('Бафф удалён'); selectPlayer(userId); }
+  else toast(r.error||'Ошибка', 'err');
+}
+
+async function doAction(action, userId, value=null, reason=null) {
+  const r = await api('/api/admin/action', 'POST', {action, userId, value, reason});
+  if (r.ok) { toast(r.message||'Готово'); selectPlayer(userId); loadStats(); loadPlayers(); }
+  else toast(r.error||'Ошибка', 'err');
+}
+
+function doBan(userId) {
+  const reason = prompt('Причина бана:');
+  if (reason !== null) doAction('ban', userId, null, reason || 'Admin ban');
+}
+
+// ── Prestige ──────────────────────────────────────────────────────────────────
+async function setPrestigeLevel(userId) {
+  const level = Number(document.getElementById('act-prestige-level').value);
+  if (!confirm(`Set prestige ${level} for user ${userId}?\n\nThis does NOT reset progress — only changes prestige_level.`)) return;
+  try {
+    const r = await api(`/api/admin/prestiges/${userId}/set`, 'POST', { prestigeLevel: level });
+    if (r.ok) { toast(`Prestige ${level} set`); selectPlayer(userId); }
+    else toast(r.error || 'Error', 'err');
+  } catch(e) { toast(e.message || 'Error', 'err'); }
+}
+
+async function loadPlayerPrestige(userId) {
+  const wrap = document.getElementById('prestige-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading">Загрузка...</div>';
+  try {
+    const data = await api(`/api/admin/prestiges/${userId}`);
+    const history = data.history || [];
+    const status = data.status || {};
+    const PRESTIGE_LABELS = ['', t('horizon1'), t('horizon2'), t('horizon3')];
+    const currentBadge = status.prestigeLevel > 0
+      ? `<span class="tag tag-purple">✦ ${t('prestigeStat')} ${status.prestigeLevel} — ${PRESTIGE_LABELS[status.prestigeLevel] || ''}</span>`
+      : `<span class="tag">${t('noPrestigeTag')}</span>`;
+    if (!history.length) {
+      wrap.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg2);border-radius:8px">${currentBadge}<span class="hint">No history</span></div>`;
+      return;
+    }
+    wrap.innerHTML = `<div style="margin-bottom:8px">${currentBadge}</div>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>${t('prestigeLabel')}</th><th>${t('horizonLabel')}</th><th>${t('dateLabel')}</th></tr></thead>
+        <tbody>${history.map(h => `<tr>
+          <td><span class="tag tag-purple">✦ ${h.prestige_level}</span></td>
+          <td>${PRESTIGE_LABELS[h.prestige_level] || '—'}</td>
+          <td>${fmtDate(h.achieved_at)}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>`;
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty" style="color:var(--red)">Error: ${e.message}</div>`;
+  }
+}
+
+let _prestigeHistoryPage = 1;
+async function showPrestigeHistory(page = 1) {
+  _prestigeHistoryPage = page;
+  const main = document.getElementById('main');
+  main.innerHTML = '<div class="loading" style="margin-top:60px">Loading...</div>';
+  try {
+    const limit = 50;
+    const data = await api(`/api/admin/prestiges?limit=${limit}&offset=${(page - 1) * limit}`);
+    const history = data.history || [];
+    const PRESTIGE_LABELS = ['', t('horizon1'), t('horizon2'), t('horizon3')];
+    main.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h2 style="margin:0">✦ ${t('prestigeHistory')}</h2>
+        <button class="btn btn-ghost btn-sm" onclick="showPrestigeHistory(${page})">↻</button>
+      </div>
+      ${history.length === 0 ? `<div class="empty" style="padding:40px">${t('noPrestige')}</div>` : `
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>${t('playerLabel')}</th><th>ID</th><th>${t('prestigeLabel')}</th><th>${t('horizonLabel')}</th><th>${t('dateLabel')}</th><th></th></tr></thead>
+        <tbody>${history.map(h => {
+          const uname = h.username ? '@' + h.username : (h.first_name || 'ID ' + h.user_id);
+          return `<tr>
+            <td>${uname}</td>
+            <td class="mono" style="font-size:11px">${h.user_id}</td>
+            <td><span class="tag tag-purple">✦ ${h.prestige_level}</span></td>
+            <td>${PRESTIGE_LABELS[h.prestige_level] || '—'}</td>
+            <td>${fmtDate(h.achieved_at)}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="selectPlayer(${h.user_id})">${t('goTo')}</button></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>
+      <div class="pagination" style="margin-top:12px">
+        <button class="btn btn-ghost btn-sm" ${page <= 1 ? 'disabled' : ''} onclick="showPrestigeHistory(${page - 1})">←</button>
+        <span class="page-info">${t('page')} ${page}</span>
+        <button class="btn btn-ghost btn-sm" ${history.length < limit ? 'disabled' : ''} onclick="showPrestigeHistory(${page + 1})">→</button>
+      </div>`}
+    `;
+  } catch(e) {
+    main.innerHTML = `<div class="empty" style="color:var(--red);margin-top:60px">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Stars Transactions (paginated) ────────────────────────────────────────────
+async function loadStarsTx(userId, page) {
+  page = page || 1;
+  const wrap = document.getElementById('stars-tx-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading">Загрузка...</div>';
+  try {
+    const data = await api(`/api/player/${userId}/stars?page=${page}&limit=25`);
+    if (data.error) { wrap.innerHTML = `<div class="empty" style="color:var(--red)">${data.error}</div>`; return; }
+    if (!data.items?.length) { wrap.innerHTML = '<div class="empty" style="padding:16px">Нет транзакций Stars</div>'; return; }
+
+    const TYPE_LABELS = {topup:'<span class="tag tag-green">Пополнение</span>',spend_speedup:'<span class="tag tag-blue">Ускорение</span>',spend_other:'<span class="tag tag-yellow">Покупка</span>',refund:'<span class="tag tag-red">Возврат</span>'};
+
+    wrap.innerHTML = `<div class="table-wrap"><table class="data-table">
+      <thead><tr><th>Тип</th><th>Сумма</th><th>Баланс</th><th>Описание</th><th>Charge ID</th><th>Дата</th></tr></thead>
+      <tbody>${data.items.map(tx => {
+        const amt = Number(tx.amount);
+        const amtClass = amt > 0 ? 'color:var(--green)' : amt < 0 ? 'color:var(--red)' : '';
+        const chargeId = tx.telegram_payment_charge_id || '';
+        const shortCharge = chargeId ? (chargeId.length > 16 ? chargeId.slice(0,16)+'…' : chargeId) : '—';
+        return `<tr>
+          <td>${TYPE_LABELS[tx.type] || tx.type}</td>
+          <td style="${amtClass};font-weight:700;font-family:'JetBrains Mono',monospace">${amt > 0 ? '+' : ''}${amt}</td>
+          <td class="mono" style="font-size:11px">${tx.balance_before} → ${tx.balance_after}</td>
+          <td style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${tx.description || '—'}</td>
+          <td class="mono" style="font-size:10px" title="${chargeId}">${shortCharge}</td>
+          <td style="font-size:11px">${fmtDate(tx.created_at)}</td>
+        </tr>`;
+      }).join('')}</tbody></table>
+      ${data.pages > 1 ? `<div class="pagination">
+        <button class="btn btn-ghost btn-sm" ${data.page<=1?'disabled':''} onclick="loadStarsTx('${userId}',${data.page-1})">←</button>
+        <span class="page-info">${data.page} / ${data.pages} (${data.total})</span>
+        <button class="btn btn-ghost btn-sm" ${data.page>=data.pages?'disabled':''} onclick="loadStarsTx('${userId}',${data.page+1})">→</button>
+      </div>` : `<div class="pagination"><span class="page-info">Всего: ${data.total}</span></div>`}
+    </div>`;
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty" style="color:var(--red)">Ошибка: ${e.message}</div>`;
+  }
+}
+
+// ── Donations (topup only, with refund) ──────────────────────────────────────
+async function loadDonations(userId, page) {
+  page = page || 1;
+  const wrap = document.getElementById('donations-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading">Загрузка...</div>';
+  try {
+    const data = await api(`/api/player/${userId}/donations?page=${page}&limit=25`);
+    if (data.error) { wrap.innerHTML = `<div class="empty" style="color:var(--red)">${data.error}</div>`; return; }
+    if (!data.items?.length) { wrap.innerHTML = '<div class="empty" style="padding:16px">Нет донатов</div>'; return; }
+
+    wrap.innerHTML = `<div class="table-wrap"><table class="data-table">
+      <thead><tr><th>Сумма</th><th>Баланс</th><th>Описание</th><th>Charge ID</th><th>Дата</th><th>Статус</th><th></th></tr></thead>
+      <tbody>${data.items.map(tx => {
+        const amt = Number(tx.amount);
+        const chargeId = tx.telegram_payment_charge_id || '';
+        const shortCharge = chargeId ? (chargeId.length > 16 ? chargeId.slice(0,16)+'…' : chargeId) : '—';
+        const refunded = tx.is_refunded;
+        return `<tr>
+          <td style="color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace">+${amt}</td>
+          <td class="mono" style="font-size:11px">${tx.balance_before} → ${tx.balance_after}</td>
+          <td style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${tx.description || '—'}</td>
+          <td class="mono" style="font-size:10px" title="${chargeId}">${shortCharge}</td>
+          <td style="font-size:11px">${fmtDate(tx.created_at)}</td>
+          <td>${refunded ? '<span class="tag tag-red">Возвращён</span>' : '<span class="tag tag-green">Оплачен</span>'}</td>
+          <td>${!refunded && chargeId ? `<button class="btn btn-danger btn-sm" onclick="refundCharge('${userId}','${chargeId}',${amt})">↩ Возврат</button>` : ''}</td>
+        </tr>`;
+      }).join('')}</tbody></table>
+      ${data.pages > 1 ? `<div class="pagination">
+        <button class="btn btn-ghost btn-sm" ${data.page<=1?'disabled':''} onclick="loadDonations('${userId}',${data.page-1})">←</button>
+        <span class="page-info">${data.page} / ${data.pages} (${data.total})</span>
+        <button class="btn btn-ghost btn-sm" ${data.page>=data.pages?'disabled':''} onclick="loadDonations('${userId}',${data.page+1})">→</button>
+      </div>` : `<div class="pagination"><span class="page-info">Всего: ${data.total}</span></div>`}
+    </div>`;
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty" style="color:var(--red)">Ошибка: ${e.message}</div>`;
+  }
+}
+
+async function refundCharge(userId, chargeId, amount) {
+  const reason = prompt(`Возврат ${amount} Stars\nПричина возврата:`);
+  if (reason === null) return;
+  try {
+    const r = await api('/api/admin/refund', 'POST', {
+      userId: Number(userId),
+      telegramPaymentChargeId: chargeId,
+      reason: reason || 'Admin refund'
+    });
+    if (r.ok) {
+      toast(`Возврат ${r.refunded || amount} Stars выполнен`);
+      loadDonations(userId, 1);
+      loadStarsTx(userId, 1);
+      selectPlayer(Number(userId));
+    } else {
+      toast(r.error || 'Ошибка возврата', 'err');
+    }
+  } catch(e) {
+    toast('Ошибка: ' + e.message, 'err');
+  }
+}
+
+// ── Events ───────────────────────────────────────────────────────────────────
+const ZONES = [
+  {id:'all', label:'Все зоны'},
+  {id:'galaxy_outskirts', label:'Окраина галактики'},
+  {id:'asteroid_field', label:'Астероидное поле'},
+  {id:'abandoned_sector', label:'Заброшенный сектор'},
+  {id:'ancient_region', label:'Древний регион'},
+  {id:'anomalous_zone', label:'Аномальная зона'},
+];
+const FIND_TYPES = [
+  {id:'all',label:'Все типы'},{id:'asteroid',label:'Астероид'},
+  {id:'debris',label:'Мусор'},{id:'artifact',label:'Артефакт'},
+  {id:'creature',label:'Существо'},{id:'anomaly',label:'Аномалия'},
+];
+const RARITIES = [
+  {id:'all',label:'Все редкости'},{id:'common',label:'Common'},
+  {id:'rare',label:'Rare'},{id:'epic',label:'Epic'},
+  {id:'legendary',label:'Legendary'},{id:'mythical',label:'Mythical'},
+];
+const ICONS = ['🎉','⭐','💰','✨','🐾','🏺','🌟','⚡','🔥','❄️','🌊','☄️','👾','🎯','🚀','💎','🌈','🎪'];
+
+let effects = [];
+let effectCounter = 0;
+
+// ── News functions ────────────────────────────────────────────────────────────
+async function showNews() {
+  document.getElementById('newsModal').style.display = 'flex';
+  document.getElementById('news-status').textContent = 'Загрузка...';
+  try {
+    const data = await api('/api/admin/news');
+    const news = data.news;
+    if (news) {
+      document.getElementById('news-icon').value = news.icon || '📰';
+      document.getElementById('news-icon-pre').textContent = news.icon || '📰';
+      document.getElementById('news-title-ru').value = news.titleRu || '';
+      document.getElementById('news-title-en').value = news.titleEn || '';
+      document.getElementById('news-desc-ru').value = news.descriptionRu || '';
+      document.getElementById('news-desc-en').value = news.descriptionEn || '';
+      const visibleCb = document.getElementById('news-visible');
+      visibleCb.checked = Boolean(news.isVisible);
+      document.getElementById('news-visible-label').textContent = news.isVisible ? 'Вкл' : 'Выкл';
+      const upd = news.updatedAt ? new Date(news.updatedAt).toLocaleString('ru-RU') : '';
+      document.getElementById('news-status').textContent = upd ? `Последнее обновление: ${upd}` : '';
+    } else {
+      document.getElementById('news-status').textContent = 'Новость ещё не создана';
+      document.getElementById('news-visible').checked = false;
+      document.getElementById('news-visible-label').textContent = 'Выкл';
+    }
+  } catch (e) {
+    document.getElementById('news-status').textContent = 'Ошибка загрузки: ' + e.message;
+  }
+}
+
+function closeNews() { document.getElementById('newsModal').style.display = 'none'; }
+
+function pickNewsIcon(icon) {
+  document.getElementById('news-icon').value = icon;
+  document.getElementById('news-icon-pre').textContent = icon;
+}
+
+async function toggleNewsVisibility(visible) {
+  document.getElementById('news-visible-label').textContent = visible ? 'Вкл' : 'Выкл';
+  try {
+    await api('/api/admin/news/visibility', 'POST', { visible });
+    toast(visible ? 'Новость включена' : 'Новость выключена', 'ok');
+  } catch (e) {
+    toast('Ошибка: ' + e.message, 'err');
+    // Revert checkbox on error
+    const cb = document.getElementById('news-visible');
+    cb.checked = !visible;
+    document.getElementById('news-visible-label').textContent = !visible ? 'Вкл' : 'Выкл';
+  }
+}
+
+async function saveNews() {
+  const titleRu = document.getElementById('news-title-ru').value.trim();
+  const titleEn = document.getElementById('news-title-en').value.trim();
+  const descRu = document.getElementById('news-desc-ru').value.trim();
+  const descEn = document.getElementById('news-desc-en').value.trim();
+  const icon = document.getElementById('news-icon').value.trim() || '📰';
+
+  if (!titleRu && !titleEn) { toast('Введите хотя бы один заголовок', 'err'); return; }
+
+  try {
+    await api('/api/admin/news', 'POST', { titleRu, titleEn, descriptionRu: descRu, descriptionEn: descEn, icon });
+    toast('Новость сохранена', 'ok');
+    document.getElementById('news-status').textContent = 'Сохранено: ' + new Date().toLocaleString('ru-RU');
+  } catch (e) {
+    toast('Ошибка: ' + e.message, 'err');
+  }
+}
+
+function showEvents() {
+  document.getElementById('eventsModal').style.display = 'flex';
+  effects = [];
+  renderEffects();
+  loadEvents();
+}
+function closeEvents() { document.getElementById('eventsModal').style.display = 'none'; }
+
+function addEffect(preset=null) {
+  const id = ++effectCounter;
+  effects.push(preset || { id, type:'xp_bonus', multiplier:2.0, zones:null, findType:null, rarity:null, reduction:null });
+  renderEffects();
+}
+
+function removeEffect(id) {
+  effects = effects.filter(e => e.id !== id);
+  renderEffects();
+}
+
+function updateEffect(id, field, value) {
+  const e = effects.find(e => e.id === id);
+  if (!e) return;
+  if (field === 'multiplier' || field === 'reduction') value = parseFloat(value) || 1;
+  if (field === 'zones') value = value === 'all' ? null : [value];
+  if (field === 'findType') value = value === 'all' ? null : value;
+  if (field === 'rarity') value = value === 'all' ? null : value;
+  e[field] = value;
+  if (field === 'type') renderEffects(); // re-render to show/hide fields
+}
+
+function effectTypeLabel(type) {
+  return {xp_bonus:'XP бонус', credits_bonus:'Кредиты', spawn_rate:'Спавн типа', rarity_bonus:'Буст редкости', common_reduction:'Снизить common'}[type] || type;
+}
+
+function renderEffects() {
+  const el = document.getElementById('effects-list');
+  if (!effects.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Нет эффектов — добавь хотя бы один</div>';
+    return;
+  }
+  el.innerHTML = effects.map(e => {
+    const zoneVal = !e.zones ? 'all' : e.zones[0];
+    const showFindType = e.type === 'spawn_rate';
+    const showRarity = e.type === 'rarity_bonus';
+    const showReduction = e.type === 'common_reduction';
+    const showMultiplier = !showReduction;
+    return `<div style="background:var(--bg4);border-radius:8px;padding:10px;margin-bottom:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <select class="action-input" style="flex:1;min-width:160px" onchange="updateEffect(${e.id},'type',this.value)">
+        <option value="xp_bonus" ${e.type==='xp_bonus'?'selected':''}>XP бонус</option>
+        <option value="credits_bonus" ${e.type==='credits_bonus'?'selected':''}>Кредиты</option>
+        <option value="spawn_rate" ${e.type==='spawn_rate'?'selected':''}>Спавн типа</option>
+        <option value="rarity_bonus" ${e.type==='rarity_bonus'?'selected':''}>Буст редкости</option>
+        <option value="common_reduction" ${e.type==='common_reduction'?'selected':''}>Снизить common</option>
+      </select>
+      ${showFindType?`<select class="action-input" style="width:130px" onchange="updateEffect(${e.id},'findType',this.value)">
+        ${FIND_TYPES.map(f=>`<option value="${f.id}" ${(e.findType||'all')===f.id?'selected':''}>${f.label}</option>`).join('')}
+      </select>`:''}
+      ${showRarity?`<select class="action-input" style="width:120px" onchange="updateEffect(${e.id},'rarity',this.value)">
+        ${RARITIES.map(r=>`<option value="${r.id}" ${(e.rarity||'all')===r.id?'selected':''}>${r.label}</option>`).join('')}
+      </select>`:''}
+      ${showMultiplier?`<input class="action-input" style="width:70px" type="number" value="${e.multiplier||2}" step="0.1" min="0.1" placeholder="×" onchange="updateEffect(${e.id},'multiplier',this.value)" title="Множитель">` :''}
+      ${showReduction?`<input class="action-input" style="width:70px" type="number" value="${e.reduction||0.3}" step="0.05" min="0" max="1" placeholder="%" onchange="updateEffect(${e.id},'reduction',this.value)" title="Снижение (0.3 = -30%)">` :''}
+      <select class="action-input" style="width:170px" onchange="updateEffect(${e.id},'zones',this.value)">
+        ${ZONES.map(z=>`<option value="${z.id}" ${zoneVal===z.id?'selected':''}>${z.label}</option>`).join('')}
+      </select>
+      <button class="btn btn-danger btn-sm" onclick="removeEffect(${e.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+const PRESETS = {
+  double_xp: { title:'Двойной опыт', icon:'⭐', desc:'x2 XP за все экспедиции', hours:24,
+    effects:[{type:'xp_bonus',multiplier:2.0,zones:null}] },
+  credit_rush: { title:'Кредитная лихорадка', icon:'💰', desc:'x3 кредиты везде', hours:12,
+    effects:[{type:'credits_bonus',multiplier:3.0,zones:null}] },
+  rare_week: { title:'Неделя редкостей', icon:'✨', desc:'Обычные находки реже, редкие чаще', hours:168,
+    effects:[{type:'common_reduction',reduction:0.4,zones:null},{type:'rarity_bonus',rarity:null,multiplier:1.5,zones:null}] },
+  creature_invasion: { title:'Нашествие тварей', icon:'🐾', desc:'Существа на окраинах участились', hours:24,
+    effects:[{type:'spawn_rate',findType:'creature',multiplier:2.5,zones:['galaxy_outskirts']},{type:'spawn_rate',findType:'asteroid',multiplier:0.2,zones:['galaxy_outskirts']},{type:'xp_bonus',multiplier:1.2,zones:null}] },
+  artifact_hunt: { title:'Охота за артефактами', icon:'🏺', desc:'Артефакты появляются чаще в глубоком космосе', hours:48,
+    effects:[{type:'spawn_rate',findType:'artifact',multiplier:2.0,zones:['ancient_region']},{type:'spawn_rate',findType:'artifact',multiplier:1.5,zones:['abandoned_sector']},{type:'rarity_bonus',rarity:'epic',multiplier:1.8,zones:null}] },
+  gold_rush: { title:'Золотая лихорадка', icon:'🌟', desc:'x3 кредиты в астероидном поле', hours:6,
+    effects:[{type:'credits_bonus',multiplier:3.0,zones:['asteroid_field']},{type:'spawn_rate',findType:'asteroid',multiplier:2.0,zones:['asteroid_field']}] },
+};
+
+function applyPreset(key) {
+  const p = PRESETS[key];
+  if (!p) return;
+  document.getElementById('ev-icon').value = p.icon;
+  document.getElementById('ev-title').value = p.title;
+  document.getElementById('ev-desc').value = p.desc;
+  document.getElementById('ev-hours').value = p.hours;
+  effects = p.effects.map((e,i) => ({...e, id: ++effectCounter}));
+  renderEffects();
+}
+
+async function submitNewEvent() {
+  console.log('[createEvent] CALLED');
+  var btn = document.getElementById('btn-create-event');
+  try {
+    var title = document.getElementById('ev-title').value.trim();
+    if (!title) { toast('Введи название события', 'err'); return; }
+
+    var cleanEffects = [];
+    for (var i = 0; i < effects.length; i++) {
+      var e = effects[i];
+      var out = {type: e.type, zones: e.zones || null};
+      if (e.type === 'common_reduction') {
+        out.reduction = parseFloat(e.reduction) || 0.3;
+      } else {
+        out.multiplier = parseFloat(e.multiplier) || 1.0;
+        if (e.type === 'spawn_rate') out.findType = e.findType || null;
+        if (e.type === 'rarity_bonus') out.rarity = e.rarity || null;
+      }
+      cleanEffects.push(out);
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Создаём...'; }
+    console.log('[createEvent] Sending request...');
+
+    var resp = await fetch(API + '/api/events', {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: title,
+        description: document.getElementById('ev-desc').value || '',
+        icon: document.getElementById('ev-icon').value || '🎉',
+        durationHours: parseInt(document.getElementById('ev-hours').value) || 24,
+        effects: cleanEffects,
+      }),
+    });
+
+    var r;
+    try { r = await resp.json(); } catch(je) { r = {error: 'Сервер вернул не-JSON (статус ' + resp.status + ')'}; }
+    console.log('[createEvent] Response:', resp.status, r);
+
+    if (r && r.ok) {
+      toast('Событие создано!');
+      effects = []; renderEffects();
+      document.getElementById('ev-title').value = '';
+      document.getElementById('ev-desc').value = '';
+      document.getElementById('ev-icon').value = '';
+      loadEvents();
+    } else {
+      var errMsg = (r && r.error) ? r.error : ('HTTP ' + resp.status);
+      toast(errMsg, 'err');
+    }
+  } catch(e) {
+    console.error('[createEvent] ERROR:', e);
+    toast(e.message || String(e), 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Создать событие'; }
+  }
+}
+// Verify function is defined
+console.log('[admin] submitNewEvent defined:', typeof submitNewEvent);
+
+async function dbCheck() {
+  const el = document.getElementById('dbCheckResult');
+  el.textContent = 'Проверяем...';
+  try {
+    const r = await api('/api/db-check');
+    if (r.error) { el.textContent = 'ERR: ' + r.error; return; }
+    const cols = (Array.isArray(r.columns) ? r.columns : []).join(', ');
+    const cnt = r.selectTest?.ok ? `SELECT OK (${r.selectTest.count} событий)` : `SELECT ERR: ${r.selectTest?.error}`;
+    el.innerHTML = `Столбцы: <b>${cols}</b><br>${cnt}`;
+  } catch(e) { el.textContent = 'ERR: ' + e.message; }
+}
+
+async function loadEvents() {
+  const el = document.getElementById('eventsList');
+  el.innerHTML = '<div class="loading">Загрузка...</div>';
+  try {
+    const resp = await api('/api/events');
+    if (resp.error) { el.innerHTML = `<div class="empty" style="color:var(--red)">Ошибка: ${resp.error}</div>`; return; }
+    const events = Array.isArray(resp) ? resp : (resp.events || []);
+    if (!events.length) { el.innerHTML = '<div class="empty">Нет событий</div>'; return; }
+
+    el.innerHTML = '<div class="form-label" style="margin-bottom:8px">Текущие события</div>' + events.map(e => {
+      const endsAt = e.ends_at || e.endsAt;
+      const isActive = e.is_active !== false && endsAt && new Date(endsAt) > Date.now();
+      const fxLabels = (e.effects||[]).map(fx => {
+        if (fx.type==='xp_bonus') return `xp×${fx.multiplier}`;
+        if (fx.type==='credits_bonus') return `cr×${fx.multiplier}`;
+        if (fx.type==='spawn_rate') return `spawn:${fx.findType||'all'}×${fx.multiplier}`;
+        if (fx.type==='rarity_bonus') return `rar:${fx.rarity||'all'}×${fx.multiplier}`;
+        if (fx.type==='common_reduction') return `common-${Math.round(fx.reduction*100)}%`;
+        return fx.type;
+      }).join(' · ');
+      return `<div style="background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px;opacity:${isActive?1:0.5}">
+      <div style="font-size:24px;line-height:1;padding-top:2px">${e.icon||'🎉'}</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+          <span style="font-weight:700;font-size:14px">${e.title||'—'}</span>
+          ${isActive?'<span class="tag tag-green">Активно</span>':'<span class="tag tag-red">Завершено</span>'}
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">${e.description||''}</div>
+        <div style="font-size:11px;color:var(--text3)">${fxLabels}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">До: ${fmtDate(endsAt)}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        ${isActive?`<button class="btn btn-warning btn-sm" onclick="endEvent('${e.id}')">■ Стоп</button>`:''}
+        <button class="btn btn-danger btn-sm" onclick="deleteEvent('${e.id}')">✕</button>
+      </div>
+    </div>`;
+    }).join('');
+  } catch(err) {
+    el.innerHTML = `<div class="empty" style="color:var(--red)">Ошибка загрузки: ${err.message}</div>`;
+  }
+}
+
+async function endEvent(id) {
+  const r = await api(`/api/events/${id}/end`, 'POST');
+  if (r.ok) { toast('Событие завершено'); loadEvents(); }
+  else toast(r.error||'Ошибка', 'err');
+}
+
+async function deleteEvent(id) {
+  if (!confirm('Завершить и скрыть это событие?')) return;
+  const r = await api(`/api/events/${id}/end`, 'POST');
+  if (r.ok) { toast('Событие завершено'); loadEvents(); }
+  else toast(r.error||'Ошибка', 'err');
+}
+
+async function init() {
+  // Load auth token from config if not in sessionStorage
+  if (!_authToken) {
+    try {
+      const cfg = await fetch(API+'/api/config').then(r=>r.json());
+      if (cfg.adminSecret) { _authToken = cfg.adminSecret; sessionStorage.setItem('admin_token', _authToken); }
+    } catch(e) {}
+  }
+  if (!_authToken) promptLogin();
+  await loadStats();
+  try {
+    const players = await api('/api/players');
+    if (players.error) { openConfig(); }
+    else { allPlayers = players; renderList(players); }
+  } catch(e) { openConfig(); }
+}
+
+init();
+setInterval(loadStats, 30000);
+setLang(_lang);
+
+// ─── Icon picker ──────────────────────────────────────────────────────────────
+function pickIcon(inputId, previewId, emoji) {
+  document.getElementById(inputId).value = emoji;
+  const pre = document.getElementById(previewId);
+  if (pre) pre.textContent = emoji;
+}
+
+// ─── Tournaments ──────────────────────────────────────────────────────────────
+function showTournaments() {
+  document.getElementById('tournamentsModal').style.display = 'flex';
+  ensureDefaultPrizeRows();
+  loadTournaments();
+}
+function closeTournaments() { document.getElementById('tournamentsModal').style.display = 'none'; }
+
+async function loadTournaments() {
+  const el = document.getElementById('tournament-list');
+  el.innerHTML = '<div class="loading">Загрузка...</div>';
+  let r;
+  try { r = await fetch('http://localhost:8765/api/tournaments', {headers: authHeaders()}).then(res => res.json()); }
+  catch(e) { el.innerHTML = '<div class="empty" style="color:#f87171">Ошибка сети: ' + e.message + '</div>'; return; }
+  if (r.error) { el.innerHTML = '<div class="empty" style="color:#f87171">' + r.error + '</div>'; return; }
+  if (!r.tournaments || r.tournaments.length === 0) { el.innerHTML = '<div class="empty">Турниров пока нет</div>'; return; }
+  const METRIC = {credits_earned:'Кредиты',xp_gained:'XP',xp_earned:'XP',expedition_count:'Экспедиции (без ускор.)',rare_finds:'Редкие (epic+)',mythical_finds:'Мифические',heaviest_debris:'Тяж. обломок',heaviest_creature:'Тяж. существо',heaviest_artifact:'Тяж. артефакт',heaviest_anomaly:'Тяж. аномалия'};
+  el.innerHTML = r.tournaments.map(t => {
+    const now = new Date();
+    const start = new Date(t.starts_at);
+    const end = new Date(t.ends_at);
+    const isActive = t.is_active && start <= now && end > now;
+    const isPending = t.is_active && start > now;
+    const status = !t.is_active ? 'Завершён' : end < now ? 'Истёк' : isPending ? 'В ожидании' : 'Активен';
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="font-size:24px">${t.icon||'🏆'}</span>
+        <div style="flex:1">
+          <div style="font-weight:600">${t.title} <span style="font-size:12px;font-weight:400;opacity:.7">${status}</span></div>
+          <div style="font-size:12px;color:var(--text2)">${METRIC[t.metric]||t.metric} · ${t.participants||0} участников</div>
+          <div style="font-size:11px;color:var(--text2)">${new Date(t.starts_at).toLocaleString('ru')} — ${end.toLocaleString('ru')}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="loadTournamentLB('${t.id}','${t.title.replace(/'/g,"\\'")}')">Лидеры</button>
+        ${isActive || isPending ? `<button class="btn btn-sm btn-red" onclick="endTournament('${t.id}')">Завершить</button>` : ''}
+        <button class="btn btn-sm" onclick="resetTournamentScores('${t.id}')" style="color:#facc15">Сбросить очки</button>
+        <button class="btn btn-sm btn-red" onclick="deleteTournament('${t.id}')">Удалить</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addPrizeRangeRow(from = '', to = '', description = '', nftLink = '') {
+  const wrap = document.getElementById('trn-prizes-rows');
+  const row = document.createElement('div');
+  row.className = 'trn-prize-row';
+  row.style.display = 'grid';
+  row.style.gridTemplateColumns = '70px 70px 1fr 150px auto';
+  row.style.gap = '6px';
+  row.style.marginBottom = '6px';
+  row.innerHTML = `
+    <input class="form-input trn-prize-from" type="number" min="1" placeholder="место с" value="${from}">
+    <input class="form-input trn-prize-to" type="number" min="1" placeholder="место по" value="${to}">
+    <input class="form-input trn-prize-desc" placeholder="Описание награды (100 Stars, NFT Dragon, Premium)" value="${description}">
+    <input class="form-input trn-prize-nft" placeholder="Ссылка на NFT (опц.)" value="${nftLink}">
+    <button class="btn btn-sm btn-red" onclick="this.parentElement.remove()">✕</button>
+  `;
+  wrap.appendChild(row);
+}
+
+function ensureDefaultPrizeRows() {
+  const wrap = document.getElementById('trn-prizes-rows');
+  if (!wrap) return;
+  if (wrap.children.length > 0) return;
+  addPrizeRangeRow(1, 1, '100 Stars', '');
+  addPrizeRangeRow(2, 2, '50 Stars', '');
+  addPrizeRangeRow(3, 3, '25 Stars', '');
+}
+
+function collectPrizeRanges() {
+  const rows = Array.from(document.querySelectorAll('#trn-prizes-rows .trn-prize-row'));
+  const prizes = [];
+  for (const row of rows) {
+    const from = Number(row.querySelector('.trn-prize-from').value || 0);
+    const to = Number(row.querySelector('.trn-prize-to').value || 0);
+    const description = row.querySelector('.trn-prize-desc').value.trim();
+    const nftLink = row.querySelector('.trn-prize-nft').value.trim();
+    if (!from && !to && !description) continue;
+    if (!from || !to || from < 1 || to < from) {
+      throw new Error('Некорректный диапазон мест в призах');
+    }
+    if (!description) {
+      throw new Error(`Диапазон ${from}-${to}: укажи описание награды`);
+    }
+    prizes.push({ from, to, description, nftLink: nftLink || null });
+  }
+  return prizes;
+}
+
+async function createTournament() {
+  const title = document.getElementById('trn-title').value.trim();
+  const desc  = document.getElementById('trn-desc').value.trim();
+  const icon  = document.getElementById('trn-icon').value.trim() || '🏆';
+  const metric = document.getElementById('trn-metric').value;
+  const startsAt = document.getElementById('trn-start').value;
+  const endsAt   = document.getElementById('trn-end').value;
+  let prizes = [];
+  try {
+    prizes = collectPrizeRanges();
+  } catch (e) {
+    toast(e.message || 'Ошибка в призах', 'err');
+    return;
+  }
+  if (!title) { toast('Введи название','err'); return; }
+  if (!startsAt || !endsAt) { toast('Укажи начало и конец','err'); return; }
+  if (new Date(endsAt) <= new Date(startsAt)) { toast('Конец должен быть позже начала','err'); return; }
+  try {
+    const r = await fetch('http://localhost:8765/api/tournaments', {
+      method:'POST', headers: authHeaders(),
+      body: JSON.stringify({title, description:desc, icon, metric,
+        startsAt: new Date(startsAt).toISOString(), endsAt: new Date(endsAt).toISOString(),
+        topRewards: prizes})
+    }).then(res=>res.json());
+    if (r.ok) {
+      toast('Турнир создан!');
+      document.getElementById('trn-title').value = '';
+      document.getElementById('trn-prizes-rows').innerHTML = '';
+      ensureDefaultPrizeRows();
+      loadTournaments();
+    } else toast(r.error||'Ошибка','err');
+  } catch(e) { toast('Ошибка: '+e.message,'err'); }
+}
+
+async function endTournament(id) {
+  if (!confirm('Завершить турнир досрочно?')) return;
+  const r = await fetch('http://localhost:8765/api/tournaments/'+id+'/end',{method:'POST',headers:authHeaders()}).then(r=>r.json());
+  if (r.ok) { toast('Турнир завершён'); loadTournaments(); }
+  else toast(r.error||'Ошибка','err');
+}
+
+async function resetTournamentScores(id) {
+  if (!confirm('Сбросить все очки участников этого турнира?')) return;
+  const r = await fetch('http://localhost:8765/api/tournaments/'+id+'/reset-scores',{method:'POST',headers:authHeaders()}).then(r=>r.json());
+  if (r.ok) { toast('Очки сброшены'); loadTournaments(); }
+  else toast(r.error||'Ошибка','err');
+}
+
+async function deleteTournament(id) {
+  if (!confirm('Удалить турнир и все результаты навсегда?')) return;
+  const r = await fetch('http://localhost:8765/api/tournaments/'+id,{method:'DELETE',headers:authHeaders()}).then(r=>r.json());
+  if (r.ok) { toast('Удалён'); loadTournaments(); }
+  else toast(r.error||'Ошибка','err');
+}
+
+async function loadTournamentLB(id, name) {
+  const card = document.getElementById('tournament-lb-card');
+  document.getElementById('lb-tournament-name').textContent = name;
+  card.style.display = 'block';
+  card.scrollIntoView({behavior:'smooth'});
+  const r = await fetch('http://localhost:8765/api/tournaments/'+id+'/leaderboard',{headers:authHeaders()}).then(r=>r.json());
+  const el = document.getElementById('tournament-lb-body');
+  if (!r.leaderboard || r.leaderboard.length === 0) {
+    el.innerHTML = '<div class="empty" style="font-size:13px">Нет участников. Фиксируется после экспедиции.</div>'; return;
+  }
+  const medals = ['1.','2.','3.'];
+  el.innerHTML = '<table style="width:100%;border-collapse:collapse"><thead><tr style="color:var(--text2);font-size:12px"><th style="text-align:left;padding:4px 8px">#</th><th style="text-align:left;padding:4px 8px">Игрок</th><th style="text-align:right;padding:4px 8px">Счёт</th><th style="text-align:right;padding:4px 8px">Ур.</th></tr></thead><tbody>' +
+    r.leaderboard.map((row, i) =>
+      '<tr style="border-top:1px solid var(--border)"><td style="padding:6px 8px">'+(medals[i]||i+1)+'</td><td style="padding:6px 8px">'+(row.first_name||row.username||'ID:'+row.user_id)+'</td><td style="padding:6px 8px;text-align:right;font-weight:600">'+Number(row.score).toLocaleString()+'</td><td style="padding:6px 8px;text-align:right;color:var(--text2)">'+row.level+'</td></tr>'
+    ).join('') + '</tbody></table>';
+}
+
+</script>
+
+<!-- Tournaments Modal -->
+<div class="modal-bg" id="tournamentsModal" style="display:none">
+  <div class="modal" style="width:720px;max-width:95vw;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0">Турниры</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeTournaments()">✕</button>
+    </div>
+
+    <div style="background:var(--bg3);border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="font-weight:600;margin-bottom:12px;font-size:14px">Создать турнир</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <div class="form-label">Название *</div>
+          <input class="form-input" id="trn-title" placeholder="Гонка за кредитами">
+        </div>
+        <div>
+          <div class="form-label">Иконка</div>
+          <div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap">
+            <input class="form-input" id="trn-icon" placeholder="🏆" style="width:44px;text-align:center;font-size:18px" oninput="document.getElementById('trn-icon-pre').textContent=this.value||'🏆'">
+            <span id="trn-icon-pre" style="font-size:24px;margin:0 4px">🏆</span>
+            <button class="btn btn-sm" onclick="pickIcon('trn-icon','trn-icon-pre','🏆')">🏆</button>
+            <button class="btn btn-sm" onclick="pickIcon('trn-icon','trn-icon-pre','🥇')">🥇</button>
+            <button class="btn btn-sm" onclick="pickIcon('trn-icon','trn-icon-pre','⚔️')">⚔️</button>
+            <button class="btn btn-sm" onclick="pickIcon('trn-icon','trn-icon-pre','🔥')">🔥</button>
+            <button class="btn btn-sm" onclick="pickIcon('trn-icon','trn-icon-pre','💰')">💰</button>
+            <button class="btn btn-sm" onclick="pickIcon('trn-icon','trn-icon-pre','🚀')">🚀</button>
+            <button class="btn btn-sm" onclick="pickIcon('trn-icon','trn-icon-pre','⭐')">⭐</button>
+            <button class="btn btn-sm" onclick="pickIcon('trn-icon','trn-icon-pre','💎')">💎</button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <div class="form-label">Описание</div>
+        <textarea class="form-input" id="trn-desc" rows="3" placeholder="Краткое описание для игроков" style="resize:vertical"></textarea>
+      </div>
+      <div style="margin-bottom:10px">
+        <div class="form-label">Метрика *</div>
+        <select class="form-input" id="trn-metric">
+          <option value="credits_earned">Заработанные кредиты</option>
+          <option value="xp_gained">Набранный опыт</option>
+          <option value="expedition_count">Экспедиции (без ускоренных)</option>
+          <option value="rare_finds">Редкие находки (epic+)</option>
+          <option value="mythical_finds">Мифические находки</option>
+          <option value="heaviest_debris">Тяжелейший обломок</option>
+          <option value="heaviest_creature">Тяжелейшее существо</option>
+          <option value="heaviest_artifact">Тяжелейший артефакт</option>
+          <option value="heaviest_anomaly">Тяжелейшая аномалия</option>
+        </select>
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div class="form-label" style="margin:0">Описание наград (место → что получит)</div>
+          <button class="btn btn-sm" onclick="addPrizeRangeRow()">+ Диапазон</button>
+        </div>
+        <div id="trn-prizes-rows" style="background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:10px;max-height:220px;overflow-y:auto"></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:4px">Примеры: "100 Stars", "NFT Dragon", "Premium Status". Если нужна ссылка на NFT → добавь в поле "Ссылка на NFT"</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <div class="form-label">Начало *</div>
+          <input class="form-input" id="trn-start" type="datetime-local">
+        </div>
+        <div>
+          <div class="form-label">Конец *</div>
+          <input class="form-input" id="trn-end" type="datetime-local">
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="createTournament()">Создать турнир</button>
+    </div>
+
+    <div id="tournament-list"><div class="loading">Загрузка...</div></div>
+
+    <div id="tournament-lb-card" style="display:none;margin-top:16px;background:var(--bg3);border-radius:12px;padding:16px">
+      <div style="font-weight:600;margin-bottom:8px">Лидеры: <span id="lb-tournament-name"></span></div>
+      <div id="tournament-lb-body"></div>
+    </div>
+  </div>
+</div>
+<!-- Referrals Modal -->
+<div class="modal-bg" id="referralsModal" style="display:none">
+  <div class="modal" style="width:720px;max-width:95vw;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0">Реферальная система</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeReferrals()">✕</button>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px" id="ref-stats-grid">
+      <div class="stat-card"><div class="stat-card-val" id="ref-total">—</div><div class="stat-card-label">Всего рефералов</div></div>
+      <div class="stat-card"><div class="stat-card-val green" id="ref-active">—</div><div class="stat-card-label">Активированных</div></div>
+      <div class="stat-card"><div class="stat-card-val gold" id="ref-credits">—</div><div class="stat-card-label">Кредитов выдано</div></div>
+      <div class="stat-card"><div class="stat-card-val" id="ref-stars" style="color:var(--accent)">—</div><div class="stat-card-label">Звёзд выдано</div></div>
+    </div>
+
+    <!-- Top referrers -->
+    <div id="ref-top-list" style="margin-bottom:16px"></div>
+
+    <!-- Selected referrer details -->
+    <div style="background:var(--bg3);border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <div style="font-weight:600;font-size:13px">Аккаунты конкретного реферала</div>
+        <input class="form-input mono" id="ref-referrer-id" placeholder="ID реферера" style="width:180px;font-size:12px">
+        <input class="form-input mono" id="ref-referrer-limit" type="number" min="1" max="1000" value="200" style="width:90px;font-size:12px" title="Лимит">
+        <button class="btn btn-sm btn-primary" onclick="loadReferrerAccounts()">Показать</button>
+        <div id="ref-detail-meta" style="font-size:11px;color:var(--text2)">Выбери игрока из топа или введи ID вручную</div>
+      </div>
+      <div id="ref-detail-wrap" class="table-wrap" style="display:none">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Игрок</th><th>Активирован</th><th>Экспедиций</th><th>Находок</th><th>Кредиты</th><th>Создан</th><th>Последний онлайн</th>
+            </tr>
+          </thead>
+          <tbody id="ref-detail-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Config -->
+    <div style="background:var(--bg3);border-radius:12px;padding:16px">
+      <div style="font-weight:600;margin-bottom:12px;font-size:14px">Настройки реферальной системы</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <div class="form-label">Мин. экспедиций для активации</div>
+          <input class="form-input mono" id="ref-minExp" type="number" value="3">
+        </div>
+        <div>
+          <div class="form-label">Мин. кредитов для активации</div>
+          <input class="form-input mono" id="ref-minCred" type="number" value="500">
+        </div>
+        <div>
+          <div class="form-label">Задержка награды (мс)</div>
+          <input class="form-input mono" id="ref-delay" type="number" value="3600000">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <div class="form-label">Награда реферера (кр.)</div>
+          <input class="form-input mono" id="ref-rewReferrer" type="number" value="500">
+        </div>
+        <div>
+          <div class="form-label">Награда реферала (кр.)</div>
+          <input class="form-input mono" id="ref-rewReferral" type="number" value="300">
+        </div>
+        <div>
+          <div class="form-label">% кредитов (пассив)</div>
+          <input class="form-input mono" id="ref-credPct" type="number" value="5" step="0.5">
+        </div>
+        <div>
+          <div class="form-label">% звёзд (пассив)</div>
+          <input class="form-input mono" id="ref-starsPct" type="number" value="5" step="0.5">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <div class="form-label">Макс. % бонуса</div>
+          <input class="form-input mono" id="ref-maxPct" type="number" value="15" step="0.5">
+        </div>
+        <div>
+          <div class="form-label">Лимит кредитов/день</div>
+          <input class="form-input mono" id="ref-maxCredDay" type="number" value="5000">
+        </div>
+        <div>
+          <div class="form-label">Лимит звёзд/день</div>
+          <input class="form-input mono" id="ref-maxStarsDay" type="number" value="50">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <div class="form-label">Мин. возраст TG-аккаунта (дней)</div>
+          <input class="form-input mono" id="ref-minAge" type="number" value="3">
+        </div>
+        <div>
+          <div class="form-label">Режим звёзд</div>
+          <select class="form-input" id="ref-starsMode">
+            <option value="stars">Stars (звёзды)</option>
+            <option value="credits">Credits (кредиты)</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%" onclick="saveReferralConfig()">Сохранить настройки</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quests Modal -->
+<div class="modal-bg" id="questsModal" style="display:none">
+  <div class="modal" style="width:1100px;max-width:97vw;max-height:92vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0">Квесты — Генератор</h3>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-warning btn-sm" onclick="questWipeRefresh()">Сбросить квесты всем</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeQuests()">✕</button>
+      </div>
+    </div>
+
+    <!-- Reward Formula Reference -->
+    <div style="background:linear-gradient(135deg,rgba(99,179,237,.08),rgba(124,58,237,.08));border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px">
+      <div style="font-weight:600;margin-bottom:8px;font-size:12px;color:var(--accent)">Формулы авторасчёта кредитов</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:11px">
+        <div style="background:var(--bg);border-radius:8px;padding:7px 9px">
+          <span style="color:var(--yellow)">Доставить</span><br>
+          <span class="mono" style="color:var(--green)">avgPrice × кол-во × 1.25</span><br>
+          <span style="color:var(--text3)">Предметы забираются</span>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:7px 9px">
+          <span style="color:var(--yellow)">Продать</span><br>
+          <span class="mono" style="color:var(--green)">avgPrice × кол-во × 0.10</span><br>
+          <span style="color:var(--text3)">+бонус к цене продажи</span>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:7px 9px">
+          <span style="color:var(--yellow)">Найти</span><br>
+          <span class="mono" style="color:var(--green)">avgPrice × кол-во × 0.05</span><br>
+          <span style="color:var(--text3)">Найти в экспедиции</span>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:7px 9px">
+          <span style="color:var(--yellow)">Экспедиции</span><br>
+          <span class="mono" style="color:var(--green)">вручную (creditRange)</span><br>
+          <span style="color:var(--text3)">Кредиты из поля ниже</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quest Config -->
+    <details style="margin-bottom:14px">
+      <summary style="cursor:pointer;font-weight:600;font-size:13px;padding:10px 12px;background:var(--bg3);border-radius:10px;list-style:none;display:flex;align-items:center;gap:6px">
+        Общие настройки квестов <span style="font-size:10px;color:var(--text3);margin-left:auto">▼ развернуть</span>
+      </summary>
+      <div style="background:var(--bg3);border-radius:0 0 10px 10px;padding:14px;border-top:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">
+          <div><div class="form-label">Дейликов</div><input class="form-input mono" id="qc-daily-count" type="number" value="3" min="1" max="10"></div>
+          <div><div class="form-label">Обновление (ч)</div><input class="form-input mono" id="qc-daily-refresh" type="number" value="24"></div>
+          <div><div class="form-label">Бесп. реролл</div><input class="form-input mono" id="qc-daily-rerolls" type="number" value="1" min="0"></div>
+          <div><div class="form-label">Buyout макс/д</div><input class="form-input mono" id="qc-buyout-max" type="number" value="1" min="0"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">
+          <div><div class="form-label">Повторяемых</div><input class="form-input mono" id="qc-repeatable-count" type="number" value="1" min="0" max="10"></div>
+          <div><div class="form-label">Обн. повтор. (ч)</div><input class="form-input mono" id="qc-repeatable-refresh" type="number" value="24"></div>
+          <div><div class="form-label">Повт. реролл</div><input class="form-input mono" id="qc-repeatable-rerolls" type="number" value="0" min="0" disabled></div>
+          <div><div class="form-label">Повт. выкуп</div><input class="form-input mono" value="недоступно" disabled></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">
+          <div><div class="form-label">Викликов</div><input class="form-input mono" id="qc-weekly-count" type="number" value="2" min="0" max="10"></div>
+          <div><div class="form-label">Обн. виклик (ч)</div><input class="form-input mono" id="qc-weekly-refresh" type="number" value="168"></div>
+          <div><div class="form-label">Шанс спец %</div><input class="form-input mono" id="qc-special-chance" type="number" value="5" min="0" max="100"></div>
+          <div><div class="form-label">Множ. buyout</div><input class="form-input mono" id="qc-buyout-mult" type="number" value="2.0" step="0.1" min="1"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveQuestConfig()">Сохранить настройки</button>
+      </div>
+    </details>
+
+    <!-- Filter bar -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="font-weight:600;font-size:14px">Шаблоны заданий</div>
+      <select class="form-input" id="qf-faction" style="width:140px;font-size:11px;padding:4px 8px" onchange="renderQuestTemplates()">
+        <option value="">Все фракции</option>
+        <option value="bioengineers">Биоинженеры</option>
+        <option value="tech_institute">Техноинститут</option>
+        <option value="navigators_order">Навигаторы</option>
+        <option value="black_market">Чёрный рынок</option>
+      </select>
+      <select class="form-input" id="qf-type" style="width:130px;font-size:11px;padding:4px 8px" onchange="renderQuestTemplates()">
+        <option value="">Все типы</option>
+        <option value="deliver_object">Доставить</option>
+        <option value="sell_object">Продать</option>
+        <option value="find_object">Найти</option>
+        <option value="expeditions">Экспедиции</option>
+      </select>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn btn-success btn-sm" onclick="questOpenCreate()">+ Новый шаблон</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadQuestTemplates()">↻</button>
+      </div>
+    </div>
+
+    <div style="font-size:11px;color:var(--text2);margin-bottom:10px">
+      Шаблонов: <span id="quest-count" class="mono">—</span>
+      · Показано: <span id="quest-filtered-count" class="mono">—</span>
+    </div>
+
+    <div id="quest-templates-list"></div>
+
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="saveAllTemplates()">Сохранить все в БД</button>
+      <button class="btn btn-secondary btn-sm" onclick="questLoadPreset()">Загрузить пресет</button>
+      <button class="btn btn-danger btn-sm" onclick="questResetDefaults()">↺ Сбросить к дефолтам</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quest Editor Modal (create/edit) -->
+<div class="modal-bg" id="questEditorModal" style="display:none;z-index:1100">
+  <div class="modal" style="width:900px;max-width:96vw;max-height:94vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 style="margin:0" id="qe-modal-title">Создать шаблон квеста</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeQuestEditor()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:14px">
+      <!-- Left: form -->
+      <div>
+        <!-- ID + Faction + Type row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <div class="form-label">ID шаблона <span style="color:var(--red)">*</span></div>
+            <input class="form-input mono" id="qe-id" placeholder="bio_deliver_creature" oninput="qeUpdatePreview()">
+          </div>
+          <div>
+            <div class="form-label">Фракция <span style="color:var(--red)">*</span></div>
+            <select class="form-input" id="qe-faction" onchange="qeUpdatePreview()">
+              <option value="bioengineers">Биоинженеры</option>
+              <option value="tech_institute">Техноинститут</option>
+              <option value="navigators_order">Навигаторы</option>
+              <option value="black_market">Чёрный рынок</option>
+            </select>
+          </div>
+          <div>
+            <div class="form-label">Тип задания <span style="color:var(--red)">*</span></div>
+            <select class="form-input" id="qe-type" onchange="qeOnTypeChange()">
+              <option value="deliver_object">Доставить</option>
+              <option value="sell_object">Продать</option>
+              <option value="find_object">Найти</option>
+              <option value="expeditions">Экспедиции</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Target type + Quest schedule -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div id="qe-targetType-wrap">
+            <div class="form-label">Тип цели</div>
+            <select class="form-input" id="qe-targetType" onchange="qeUpdatePreview()">
+              <option value="">Любой</option>
+              <option value="debris">Обломки</option>
+              <option value="artifact">Артефакты</option>
+              <option value="creature">Существа</option>
+              <option value="anomaly">Аномалии</option>
+              <option value="asteroid">Астероиды</option>
+              <option value="echo">Эхо (U2)</option>
+              <option value="relic">Реликвии (U2)</option>
+              <option value="entity">Сущности (U2)</option>
+              <option value="rift">Разломы (U2)</option>
+            </select>
+          </div>
+          <div>
+            <div class="form-label">Типы расписания</div>
+            <div style="display:flex;gap:10px;margin-top:6px">
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="qe-qt-daily" onchange="qeUpdatePreview()"> daily</label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="qe-qt-weekly" onchange="qeUpdatePreview()"> weekly</label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="qe-qt-repeatable" onchange="qeUpdatePreview()"> repeatable</label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="qe-qt-special" onchange="qeUpdatePreview()"> special</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Target rarities -->
+        <div style="margin-bottom:10px" id="qe-rarities-wrap">
+          <div class="form-label">Целевые редкости (оставить пустым = любые)</div>
+          <div style="display:flex;gap:10px;margin-top:6px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" class="qe-rar" value="common" onchange="qeUpdatePreview()"> <span class="r-common">Common</span></label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" class="qe-rar" value="rare" onchange="qeUpdatePreview()"> <span class="r-rare">Rare</span></label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" class="qe-rar" value="epic" onchange="qeUpdatePreview()"> <span class="r-epic">Epic</span></label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" class="qe-rar" value="legendary" onchange="qeUpdatePreview()"> <span class="r-legendary">Legendary</span></label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" class="qe-rar" value="mythical" onchange="qeUpdatePreview()"> <span class="r-mythical">Mythical</span></label>
+          </div>
+        </div>
+
+        <!-- Amount + Credits + XP + Rep -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
+          <div>
+            <div class="form-label">Кол-во мин</div>
+            <input class="form-input mono" id="qe-amt0" type="number" value="1" min="1" oninput="qeUpdatePreview()">
+          </div>
+          <div>
+            <div class="form-label">Кол-во макс</div>
+            <input class="form-input mono" id="qe-amt1" type="number" value="3" min="1" oninput="qeUpdatePreview()">
+          </div>
+          <div id="qe-cr-wrap">
+            <div class="form-label">Кредиты мин <span id="qe-cr-hint" style="color:var(--text3);font-size:10px">(авто)</span></div>
+            <input class="form-input mono" id="qe-cr0" type="number" value="0" oninput="qeUpdatePreview()">
+          </div>
+          <div id="qe-cr-wrap2">
+            <div class="form-label">Кредиты макс</div>
+            <input class="form-input mono" id="qe-cr1" type="number" value="0" oninput="qeUpdatePreview()">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
+          <div>
+            <div class="form-label">XP мин</div>
+            <input class="form-input mono" id="qe-xp0" type="number" value="50" oninput="qeUpdatePreview()">
+          </div>
+          <div>
+            <div class="form-label">XP макс</div>
+            <input class="form-input mono" id="qe-xp1" type="number" value="150" oninput="qeUpdatePreview()">
+          </div>
+          <div>
+            <div class="form-label">Репутация мин</div>
+            <input class="form-input mono" id="qe-rep0" type="number" value="10" oninput="qeUpdatePreview()">
+          </div>
+          <div>
+            <div class="form-label">Репутация макс</div>
+            <input class="form-input mono" id="qe-rep1" type="number" value="25" oninput="qeUpdatePreview()">
+          </div>
+        </div>
+
+        <!-- Stars (for black market) -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+          <div>
+            <div class="form-label">Шанс звёзд (0–1)</div>
+            <input class="form-input mono" id="qe-starCh" type="number" step="0.01" min="0" max="1" value="0" oninput="qeUpdatePreview()">
+          </div>
+          <div>
+            <div class="form-label">Звёзды мин</div>
+            <input class="form-input mono" id="qe-star0" type="number" value="0" oninput="qeUpdatePreview()">
+          </div>
+          <div>
+            <div class="form-label">Звёзды макс</div>
+            <input class="form-input mono" id="qe-star1" type="number" value="0" oninput="qeUpdatePreview()">
+          </div>
+        </div>
+
+        <!-- Names + Descriptions -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div>
+            <div class="form-label">Название (RU)</div>
+            <input class="form-input" id="qe-nameRu" placeholder="Доставить существ" oninput="qeUpdatePreview()">
+          </div>
+          <div>
+            <div class="form-label">Название (EN)</div>
+            <input class="form-input" id="qe-nameEn" placeholder="Deliver creatures" oninput="qeUpdatePreview()">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <div class="form-label">Описание (RU)</div>
+            <textarea class="form-input" id="qe-descRu" rows="2" placeholder="Фракция нуждается в образцах..." style="resize:vertical" oninput="qeUpdatePreview()"></textarea>
+          </div>
+          <div>
+            <div class="form-label">Описание (EN)</div>
+            <textarea class="form-input" id="qe-descEn" rows="2" placeholder="The faction needs specimens..." style="resize:vertical" oninput="qeUpdatePreview()"></textarea>
+          </div>
+        </div>
+
+        <!-- Reputation requirements -->
+        <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid rgba(246,173,85,.2);margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div class="form-label" style="margin:0;color:var(--yellow)">Требования репутации (для показа)</div>
+            <button class="btn btn-ghost btn-sm" style="font-size:10px" onclick="qeAddReq()">+ Добавить</button>
+          </div>
+          <div id="qe-reqs"></div>
+        </div>
+
+        <!-- Reputation penalties -->
+        <div style="padding:10px;background:var(--bg);border-radius:8px;border:1px solid rgba(252,129,129,.2);margin-bottom:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div class="form-label" style="margin:0;color:var(--red)">Штрафы репутации (при выполнении)</div>
+            <button class="btn btn-ghost btn-sm" style="font-size:10px" onclick="qeAddPenalty()">+ Добавить</button>
+          </div>
+          <div id="qe-penalties"></div>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-success" onclick="qeSave()">✓ Сохранить шаблон</button>
+          <button class="btn btn-ghost" onclick="closeQuestEditor()">Отмена</button>
+        </div>
+      </div>
+
+      <!-- Right: live preview -->
+      <div style="position:sticky;top:0">
+        <div style="background:var(--bg3);border-radius:12px;padding:14px;border:1px solid var(--border)">
+          <div style="font-weight:600;font-size:12px;color:var(--accent);margin-bottom:10px">Предпросмотр</div>
+          <div id="qe-preview-card" style="background:var(--bg2);border-radius:10px;padding:12px;font-size:12px">
+            <div style="font-size:14px;font-weight:700;margin-bottom:4px" id="pv-name">—</div>
+            <div style="color:var(--text2);margin-bottom:8px;font-size:11px" id="pv-desc">—</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="pv-tags"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px" id="pv-rewards">
+            </div>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--text3);line-height:1.6" id="qe-calc-notes"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Analytics Modal -->
+<div class="modal-bg" id="analyticsModal" style="display:none">
+  <div class="modal" style="width:850px;max-width:97vw;max-height:92vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0">Аналитика ссылок</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeAnalytics()">✕</button>
+    </div>
+
+    <!-- Create new link -->
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div class="form-label" style="margin-bottom:8px">Создать трекинг-ссылку</div>
+      <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px">
+          <div class="form-label">Код (латиница, _, -)</div>
+          <input class="form-input" id="al-source" placeholder="vk_group1" style="font-size:12px">
+        </div>
+        <div style="flex:1.5;min-width:180px">
+          <div class="form-label">Название</div>
+          <input class="form-input" id="al-label" placeholder="ВК группа #1" style="font-size:12px">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="createTrackingLink()" style="white-space:nowrap">+ Создать</button>
+      </div>
+      <div id="al-generated-link" style="margin-top:8px;display:none">
+        <div class="form-label">Ссылка для распространения</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input class="form-input mono" id="al-link-url" readonly style="font-size:11px;background:var(--bg4)">
+          <button class="btn btn-ghost btn-sm" onclick="copyLink()">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Links table -->
+    <div style="margin-bottom:16px">
+      <div class="section-title">Трекинг-ссылки</div>
+      <div style="overflow-x:auto">
+        <table class="data-table" id="al-table">
+          <thead><tr>
+            <th>Код</th><th>Название</th><th>Кликов</th><th>Уникальных</th><th>Новых</th><th>Последний</th><th></th>
+          </tr></thead>
+          <tbody id="al-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text3)">Загрузка...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Chat sources -->
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div class="section-title" style="margin-bottom:10px">Чаты и владельцы</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 120px auto;gap:8px;align-items:end;margin-bottom:10px">
+        <div>
+          <div class="form-label">Chat ID</div>
+          <input class="form-input mono" id="cs-chat-id" placeholder="-1001234567890" style="font-size:12px" oninput="syncChatSourceFormFromChatId()" onblur="syncChatSourceFormFromChatId()">
+        </div>
+        <div>
+          <div class="form-label">Название чата</div>
+          <input class="form-input" id="cs-chat-title" placeholder="Название чата" style="font-size:12px">
+        </div>
+        <div>
+          <div class="form-label">Владелец ID</div>
+          <input class="form-input mono" id="cs-owner-id" placeholder="123456789" style="font-size:12px">
+        </div>
+        <div>
+          <div class="form-label">Владелец username(ы)</div>
+          <input class="form-input" id="cs-owner-username" placeholder="@name, @other_name" style="font-size:12px">
+        </div>
+        <div>
+          <div class="form-label">Процент</div>
+          <input class="form-input mono" id="cs-owner-percent" type="number" min="0" max="100" step="0.1" value="0" style="font-size:12px">
+        </div>
+        <div>
+          <div class="form-label">Код ссылки</div>
+          <input class="form-input mono" id="cs-link-code" placeholder="chat_raid" style="font-size:12px">
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding-bottom:8px">
+          <input type="checkbox" id="cs-auto-delete-low-rarity" style="width:18px;height:18px;cursor:pointer;accent-color:var(--green)">
+          <span style="font-size:12px;color:var(--text2)">Удалять лишнее</span>
+        </label>
+        <button class="btn btn-primary btn-sm" onclick="saveChatSource()">Сохранить</button>
+      </div>
+      <div style="margin-bottom:10px">
+        <button class="btn btn-ghost btn-sm" onclick="clearChatSourceForm()" style="margin-right:8px">Новый чат</button>
+      </div>
+      <div id="cs-generated-link" style="display:none;margin-bottom:10px">
+        <div class="form-label" style="margin-bottom:6px">Ссылка для распространения</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input class="form-input mono" id="cs-link-url" readonly style="font-size:11px;background:var(--bg4)">
+          <button class="btn btn-ghost btn-sm" onclick="copyChatLink()">Copy</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table" id="cs-table">
+          <thead><tr>
+            <th>Чат</th><th>Код</th><th>Владелец</th><th>%</th><th>Удалять</th><th>Рег.</th><th>Stars всего</th><th>После очистки</th><th>Обновлён</th><th></th>
+          </tr></thead>
+          <tbody id="cs-tbody"><tr><td colspan="10" style="text-align:center;color:var(--text3)">Загрузка...</td></tr></tbody>
+        </table>
+      </div>
+      <div id="cs-detail" style="display:none;margin-top:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
+        <div class="section-title" style="margin-bottom:8px"><span id="cs-detail-title">—</span></div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>ID</th><th>Игрок</th><th>Источник</th><th>Эксп.</th><th>Донат Stars</th><th>Создан</th><th>Онлайн</th></tr></thead>
+            <tbody id="cs-detail-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail view for selected link -->
+    <div id="al-detail" style="display:none">
+      <div class="section-title"><span id="al-detail-title">—</span></div>
+      <!-- Daily chart placeholder -->
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:12px">
+        <div class="form-label" style="margin-bottom:8px">По дням (последние 30 дней)</div>
+        <div id="al-daily-chart" style="display:flex;align-items:end;gap:2px;height:100px;overflow-x:auto"></div>
+        <div id="al-daily-labels" style="display:flex;gap:2px;margin-top:4px;overflow-x:auto"></div>
+      </div>
+      <!-- Recent events -->
+      <div style="background:var(--bg3);border-radius:10px;padding:14px">
+        <div class="form-label" style="margin-bottom:8px">Последние запуски</div>
+        <table class="data-table">
+          <thead><tr><th>Пользователь</th><th>ID</th><th>Новый?</th><th>Дата</th></tr></thead>
+          <tbody id="al-events-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-top:16px">
+      <div class="section-title" style="margin-bottom:8px">Антибот-анализ экспедиций (эвристика)</div>
+      <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:10px">
+        <div>
+          <div class="form-label">Окно (дней)</div>
+          <input class="form-input mono" id="sb-days" type="number" min="1" max="365" value="30" style="width:90px">
+        </div>
+        <div>
+          <div class="form-label">Топ</div>
+          <input class="form-input mono" id="sb-top" type="number" min="1" max="200" value="20" style="width:90px">
+        </div>
+        <div>
+          <div class="form-label">Мин. экспедиций</div>
+          <input class="form-input mono" id="sb-min" type="number" min="1" max="10000" value="80" style="width:120px">
+        </div>
+        <div style="flex:1;min-width:170px">
+          <div class="form-label">Проверить user ID (опционально)</div>
+          <input class="form-input mono" id="sb-user-id" placeholder="123456789" style="font-size:12px">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="runSuspiciousAnalysis()">Проверить</button>
+      </div>
+
+      <div id="sb-meta" style="font-size:12px;color:var(--text2);margin-bottom:8px">Запусти анализ, чтобы увидеть топ подозрительных.</div>
+
+      <div class="table-wrap" style="margin-bottom:10px">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th><th>ID</th><th>Игрок</th><th>Подозр.</th><th>Доверие</th><th>Эксп.</th><th>В день</th><th>9-11м</th><th>CV</th><th>Причины</th>
+            </tr>
+          </thead>
+          <tbody id="sb-top-body">
+            <tr><td colspan="10" style="text-align:center;color:var(--text3)">Пока пусто</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="sb-user-wrap" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Детали по игроку</div>
+        <div id="sb-user-detail" style="font-size:12px;color:var(--text2);line-height:1.5"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Quests ──────────────────────────────────────────────────────────────────
+const FACTION_META = {
+  bioengineers:      { icon: '', label: 'Биоинженеры' },
+  tech_institute:    { icon: '', label: 'Техноинститут' },
+  industrial_league: { icon: '', label: 'Промышленная лига' },
+  navigators_order:  { icon: '', label: 'Навигаторы' },
+  black_market:      { icon: '', label: 'Чёрный рынок' },
+  chroniclers:       { icon: '', label: 'Хронисты' },
+  void_seekers:      { icon: '', label: 'Пустотники' },
+  resonators:        { icon: '', label: 'Резонаторы' },
+  haulers:           { icon: '', label: 'Дальнобойщики' },
+};
+const Q_TYPES = { deliver_object:'Доставить', find_object:'Найти', sell_object:'Продать', expeditions:'Экспедиции' };
+const TARGET_TYPES = {
+  debris: 'Обломки',
+  artifact: 'Артефакты',
+  creature: 'Существа',
+  anomaly: 'Аномалии',
+  asteroid: 'Астероиды',
+  echo: 'Эхо (U2)',
+  relic: 'Реликвии (U2)',
+  entity: 'Сущности (U2)',
+  rift: 'Разломы (U2)',
+};
+const QUEST_RARITIES = ['common','rare','epic','legendary','mythical'];
+const RARITY_CLS = { common:'r-common', rare:'r-rare', epic:'r-epic', legendary:'r-legendary', mythical:'r-mythical' };
+
+let _questTemplates = [];
+
+function showQuests() {
+  document.getElementById('questsModal').style.display = 'flex';
+  loadQuestConfig();
+  loadQuestTemplates();
+}
+function closeQuests() { document.getElementById('questsModal').style.display = 'none'; }
+
+async function showReputationTopbar() {
+  if (!currentUserId) { toast('Сначала выбери игрока из списка', 'err'); return; }
+  // Ensure player detail is rendered, then scroll to reputation controls
+  try { await selectPlayer(currentUserId); } catch(e) { /* ignore */ }
+  setTimeout(() => {
+    const el = document.getElementById('act-rep-faction');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      try { el.focus(); } catch(e){}
+    } else {
+      toast('Секция репутации недоступна', 'err');
+    }
+  }, 120);
+}
+
+async function loadQuestConfig() {
+  try {
+    const cfg = await api('/api/admin/quests/config');
+    const v = (id, key, def) => { document.getElementById(id).value = cfg[key] ?? def; };
+    v('qc-daily-count',   'quests.daily.count', 3);
+    v('qc-daily-refresh', 'quests.daily.refreshHours', 24);
+    v('qc-daily-rerolls', 'quests.daily.freeRerolls', 1);
+    v('qc-repeatable-count', 'quests.repeatable.count', 1);
+    v('qc-repeatable-refresh', 'quests.repeatable.refreshHours', 24);
+    v('qc-repeatable-rerolls', 'quests.repeatable.freeRerolls', 0);
+    v('qc-weekly-count',  'quests.weekly.count', 2);
+    v('qc-weekly-refresh','quests.weekly.refreshHours', 168);
+    v('qc-special-chance','quests.special.baseChancePercent', 8);
+    v('qc-buyout-max',   'quests.buyout.maxPerDay', 1);
+    v('qc-buyout-mult',  'quests.buyout.costMultiplier', 2.0);
+  } catch {}
+}
+
+async function saveQuestConfig() {
+  const cfg = {
+    'quests.daily':   { count: Number(document.getElementById('qc-daily-count').value), refreshHours: Number(document.getElementById('qc-daily-refresh').value), freeRerolls: Number(document.getElementById('qc-daily-rerolls').value) },
+    'quests.repeatable': { count: Number(document.getElementById('qc-repeatable-count').value), refreshHours: Number(document.getElementById('qc-repeatable-refresh').value), freeRerolls: 0 },
+    'quests.weekly':  { count: Number(document.getElementById('qc-weekly-count').value), refreshHours: Number(document.getElementById('qc-weekly-refresh').value), freeRerolls: 0 },
+    'quests.special': { baseChancePercent: Number(document.getElementById('qc-special-chance').value), maxActive: 1 },
+    'quests.buyout':  { enabled: true, costMultiplier: Number(document.getElementById('qc-buyout-mult').value), maxPerDay: Number(document.getElementById('qc-buyout-max').value), allowedTypes: ['daily'] },
+  };
+  try {
+    const r = await api('/api/quest-config', 'POST', cfg);
+    if (r.ok) toast('Настройки квестов сохранены');
+    else toast(r.error || 'Ошибка', 'err');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── Quest editor state ────────────────────────────────────────────────
+let _qeEditIdx = -1; // -1 = create mode, >=0 = editing existing template
+
+const Q_TYPES_LIST = [
+  { id: 'deliver_object', label: 'Доставить' },
+  { id: 'sell_object',    label: 'Продать' },
+  { id: 'find_object',    label: 'Найти' },
+  { id: 'expeditions',    label: 'Экспедиции' },
+];
+
+const AVG_PRICES = {
+  debris:   { common: 30, rare: 40, epic: 75, legendary: 155, mythical: 400 },
+  artifact: { common: 35, rare: 45, epic: 80, legendary: 165, mythical: 430 },
+  creature: { common: 25, rare: 35, epic: 65, legendary: 130, mythical: 160 },
+  anomaly:  { common: 30, rare: 40, epic: 80, legendary: 168, mythical: 430 },
+  asteroid: { common: 35, rare: 60, epic: 120, legendary: 240, mythical: 600 },
+  echo:     { common: 35, rare: 55, epic: 105, legendary: 220, mythical: 520 },
+  relic:    { common: 45, rare: 70, epic: 140, legendary: 300, mythical: 700 },
+  entity:   { common: 30, rare: 50, epic: 100, legendary: 210, mythical: 500 },
+  rift:     { common: 40, rare: 65, epic: 130, legendary: 280, mythical: 650 },
+};
+const PRICE_MULTS = { common: 1, rare: 2, epic: 4, legendary: 8, mythical: 20 };
+
+async function loadQuestTemplates() {
+  try {
+    const r = await api('/api/admin/quests/templates');
+    _questTemplates = r.templates || [];
+    document.getElementById('quest-count').textContent = _questTemplates.length;
+    renderQuestTemplates();
+  } catch (e) {
+    document.getElementById('quest-templates-list').innerHTML = `<div class="empty">Ошибка: ${e.message}</div>`;
+  }
+}
+
+function renderQuestTemplates() {
+  const el = document.getElementById('quest-templates-list');
+  const fFilter = document.getElementById('qf-faction').value;
+  const tFilter = document.getElementById('qf-type').value;
+
+  let filtered = _questTemplates;
+  if (fFilter) filtered = filtered.filter(t => t.faction === fFilter);
+  if (tFilter) filtered = filtered.filter(t => t.type === tFilter);
+
+  document.getElementById('quest-filtered-count').textContent = filtered.length;
+
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty" style="padding:16px">Нет шаблонов' +
+      (_questTemplates.length ? ' (попробуйте сбросить фильтры)' : '. Нажмите «Загрузить пресет» чтобы начать.') +
+      '</div>';
+    return;
+  }
+
+  // Group by faction
+  const byFaction = {};
+  for (const t of filtered) {
+    (byFaction[t.faction] = byFaction[t.faction] || []).push(t);
+  }
+
+  let html = '';
+  for (const [factionId, tmpls] of Object.entries(byFaction)) {
+    const fm = FACTION_META[factionId] || { icon: '', label: factionId };
+    html += `<div style="margin-bottom:14px">
+      <div style="font-weight:600;font-size:13px;margin-bottom:6px;color:var(--accent)">${fm.icon} ${fm.label} <span style="font-size:11px;color:var(--text3)">(${tmpls.length})</span></div>`;
+
+    for (const t of tmpls) {
+      const idx = _questTemplates.indexOf(t);
+      const rarities = (t.targetRarities || []).map(r => `<span class="${RARITY_CLS[r]||''}">${r}</span>`).join(', ') || '<span style="color:var(--text3)">любые</span>';
+      const questTypes = (t.questTypes || []).map(qt => {
+        const colors = { daily: '#63b3ed', weekly: '#f6ad55', repeatable: '#48bb78', special: '#d53f8c' };
+        return `<span style="color:${colors[qt]||'var(--text2)'}">${qt}</span>`;
+      }).join(' ');
+      const isSpecial = (t.questTypes||[]).includes('special');
+
+      html += `<div style="background:var(--bg2);border:1px solid ${isSpecial ? 'rgba(213,63,140,0.3)' : 'var(--border)'};border-radius:10px;padding:10px 12px;margin-bottom:6px${isSpecial ? ';box-shadow:0 0 8px rgba(213,63,140,0.1)' : ''}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span class="mono" style="color:var(--accent);font-size:11px">${t.id}</span>
+            <span class="tag tag-blue">${Q_TYPES[t.type] || t.type}</span>
+            ${questTypes}
+            ${isSpecial ? '<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:linear-gradient(135deg,#a855f7,#ec4899);color:#fff">✦ SPEC</span>' : ''}
+          </div>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-ghost btn-sm" onclick="questOpenEdit(${idx})" title="Редактировать">✎</button>
+            <button class="btn btn-danger btn-sm" onclick="questDeleteRow(${idx})" title="Удалить">✕</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px 8px;font-size:11px;color:var(--text2)">
+          <div><b>Цель:</b> ${TARGET_TYPES[t.targetType] || t.targetType || 'любая'}</div>
+          <div><b>Кол-во:</b> ${t.amountRange?.[0]}–${t.amountRange?.[1]}</div>
+          <div><b>Кредиты:</b> ${t.type==='expeditions' ? (t.creditRange?.[0]+'-'+t.creditRange?.[1]) : '<span style="color:var(--text3)">авто</span>'}</div>
+          <div><b>XP:</b> ${t.xpRange?.[0]}–${t.xpRange?.[1]}</div>
+          <div><b>Репутация:</b> +${t.reputationGain?.[0]}–${t.reputationGain?.[1]}</div>
+          <div><b>Редкости:</b> ${rarities}</div>
+          ${t.starChance ? `<div><b>Stars:</b> ${(t.starChance*100).toFixed(0)}% (${t.starRange?.[0]}–${t.starRange?.[1]})</div>` : ''}
+          <div><b>Имя:</b> ${t.nameRu || '—'}</div>
+        </div>
+        ${(t.reputationRequirements||[]).length ? `<div style="font-size:10px;color:var(--yellow);margin-top:3px">Req: ${t.reputationRequirements.map(r => {const fm=FACTION_META[r.factionId]||{icon:'',label:r.factionId}; return fm.label+' '+r.operator+r.value;}).join(' AND ')}</div>` : ''}
+        ${(t.reputationPenalties||[]).length ? `<div style="font-size:10px;color:var(--red);margin-top:2px">Penalty: ${t.reputationPenalties.map(p => {const fm=FACTION_META[p.factionId]||{icon:'',label:p.factionId}; return fm.label+' -'+p.amount;}).join(', ')}</div>` : ''}
+      </div>`;
+    }
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+// ── Quest editor modal ───────────────────────────────────────────────
+
+function questOpenCreate() {
+  _qeEditIdx = -1;
+  document.getElementById('qe-modal-title').textContent = 'Создать шаблон квеста';
+  _qeFillForm({
+    id: 'new_quest_' + Date.now(),
+    faction: 'bioengineers',
+    type: 'find_object',
+    targetType: '',
+    targetRarities: ['rare', 'epic'],
+    amountRange: [1, 3],
+    creditRange: [0, 0],
+    xpRange: [50, 150],
+    reputationGain: [10, 20],
+    questTypes: ['daily'],
+    nameRu: '', nameEn: '', descRu: '', descEn: '',
+    starChance: 0, starRange: [0, 0],
+    reputationRequirements: [],
+    reputationPenalties: [],
+  });
+  document.getElementById('questEditorModal').style.display = 'flex';
+  qeOnTypeChange();
+  qeUpdatePreview();
+}
+
+function questOpenEdit(idx) {
+  _qeEditIdx = idx;
+  const t = _questTemplates[idx];
+  if (!t) return;
+  document.getElementById('qe-modal-title').textContent = 'Редактировать: ' + t.id;
+  _qeFillForm(t);
+  document.getElementById('questEditorModal').style.display = 'flex';
+  qeOnTypeChange();
+  qeUpdatePreview();
+}
+
+function closeQuestEditor() {
+  document.getElementById('questEditorModal').style.display = 'none';
+}
+
+function _qeFillForm(t) {
+  const g = id => document.getElementById(id);
+  g('qe-id').value = t.id || '';
+  g('qe-faction').value = t.faction || 'bioengineers';
+  g('qe-type').value = t.type || 'find_object';
+  g('qe-targetType').value = t.targetType || '';
+  g('qe-qt-daily').checked = (t.questTypes||[]).includes('daily');
+  g('qe-qt-weekly').checked = (t.questTypes||[]).includes('weekly');
+  g('qe-qt-repeatable').checked = (t.questTypes||[]).includes('repeatable');
+  g('qe-qt-special').checked = (t.questTypes||[]).includes('special');
+  document.querySelectorAll('.qe-rar').forEach(cb => {
+    cb.checked = (t.targetRarities||[]).includes(cb.value);
+  });
+  g('qe-amt0').value = t.amountRange?.[0] ?? 1;
+  g('qe-amt1').value = t.amountRange?.[1] ?? 3;
+  g('qe-cr0').value = t.creditRange?.[0] ?? 0;
+  g('qe-cr1').value = t.creditRange?.[1] ?? 0;
+  g('qe-xp0').value = t.xpRange?.[0] ?? 50;
+  g('qe-xp1').value = t.xpRange?.[1] ?? 150;
+  g('qe-rep0').value = t.reputationGain?.[0] ?? 10;
+  g('qe-rep1').value = t.reputationGain?.[1] ?? 25;
+  g('qe-starCh').value = t.starChance || 0;
+  g('qe-star0').value = t.starRange?.[0] ?? 0;
+  g('qe-star1').value = t.starRange?.[1] ?? 0;
+  g('qe-nameRu').value = t.nameRu || '';
+  g('qe-nameEn').value = t.nameEn || '';
+  g('qe-descRu').value = t.descRu || '';
+  g('qe-descEn').value = t.descEn || '';
+
+  const reqC = document.getElementById('qe-reqs');
+  reqC.innerHTML = '';
+  (t.reputationRequirements||[]).forEach(r => _qeAddReqRow(r));
+
+  const penC = document.getElementById('qe-penalties');
+  penC.innerHTML = '';
+  (t.reputationPenalties||[]).forEach(p => _qeAddPenaltyRow(p));
+}
+
+function doBalanceAction(userId, mode) {
+  const currency = document.getElementById('act-balance-currency')?.value || 'credits';
+  const amount = Number(document.getElementById('act-balance')?.value) || 0;
+  if (amount <= 0) {
+    toast('Введи корректное количество', 'err');
+    return;
+  }
+  const action = `${mode}_${currency}`;
+  doAction(action, userId, amount);
+}
+
+function qeOnTypeChange() {
+  const type = document.getElementById('qe-type').value;
+  const isExpeditions = type === 'expeditions';
+  document.getElementById('qe-cr-hint').textContent = isExpeditions ? '(ручное)' : '(авто)';
+  document.getElementById('qe-targetType-wrap').style.display = isExpeditions ? 'none' : '';
+  document.getElementById('qe-rarities-wrap').style.display = isExpeditions ? 'none' : '';
+  qeUpdatePreview();
+}
+
+function qeUpdatePreview() {
+  const g = id => document.getElementById(id);
+  const type = g('qe-type').value;
+  const targetType = g('qe-targetType').value;
+  const nameRu = g('qe-nameRu').value || 'Без названия';
+  const descRu = g('qe-descRu').value || '—';
+  const amt0 = Number(g('qe-amt0').value) || 1;
+  const amt1 = Number(g('qe-amt1').value) || 1;
+  const xp0 = Number(g('qe-xp0').value) || 0;
+  const xp1 = Number(g('qe-xp1').value) || 0;
+  const rep0 = Number(g('qe-rep0').value) || 0;
+  const rep1 = Number(g('qe-rep1').value) || 0;
+  const cr0 = Number(g('qe-cr0').value) || 0;
+  const cr1 = Number(g('qe-cr1').value) || 0;
+  const starCh = Number(g('qe-starCh').value) || 0;
+  const star0 = Number(g('qe-star0').value) || 0;
+  const star1 = Number(g('qe-star1').value) || 0;
+  const faction = g('qe-faction').value;
+  const fm = FACTION_META[faction] || { icon: '?', label: faction };
+
+  const rarities = [...document.querySelectorAll('.qe-rar:checked')].map(c => c.value);
+  const qts = [];
+  if (g('qe-qt-daily').checked) qts.push('daily');
+  if (g('qe-qt-weekly').checked) qts.push('weekly');
+  if (g('qe-qt-repeatable').checked) qts.push('repeatable');
+  if (g('qe-qt-special').checked) qts.push('special');
+  const isSpecial = qts.includes('special');
+
+  g('pv-name').textContent = nameRu;
+  g('pv-desc').textContent = descRu;
+
+  const typeMeta = Q_TYPES_LIST.find(q => q.id === type);
+  let tagsHtml = `<span class="tag tag-blue">${typeMeta?.label || type}</span>`;
+  tagsHtml += `<span class="tag" style="background:rgba(99,179,237,.15);color:#63b3ed">${fm.icon} ${fm.label}</span>`;
+  qts.forEach(qt => {
+    const colors = { daily: '#63b3ed', weekly: '#f6ad55', repeatable: '#48bb78', special: '#d53f8c' };
+    tagsHtml += `<span class="tag" style="background:${colors[qt]}22;color:${colors[qt]}">${qt}</span>`;
+  });
+  if (isSpecial) tagsHtml += `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:linear-gradient(135deg,#a855f7,#ec4899);color:#fff">✦ SPEC</span>`;
+  g('pv-tags').innerHTML = tagsHtml;
+
+  let rewardsHtml = `<div>XP: ${xp0}–${xp1}</div>`;
+  rewardsHtml += `<div>Реп: +${rep0}–${rep1}</div>`;
+  if (starCh > 0) rewardsHtml += `<div>Stars ${(starCh*100).toFixed(0)}% (${star0}–${star1})</div>`;
+  rewardsHtml += `<div>Кол-во: ${amt0}–${amt1}</div>`;
+  if (type === 'expeditions') {
+    rewardsHtml += `<div>${cr0.toLocaleString()}–${cr1.toLocaleString()} кред</div>`;
+  }
+  g('pv-rewards').innerHTML = rewardsHtml;
+
+  let notes = '';
+  if (type !== 'expeditions' && rarities.length > 0) {
+    const mult = { deliver_object: 1.25, sell_object: 0.10, find_object: 0.05 };
+    const m = mult[type] || 0;
+    notes += `<b>Расчёт кредитов</b> (${type}, × ${m}):<br>`;
+    for (const rar of rarities) {
+      const prices = targetType ? AVG_PRICES[targetType] : {};
+      const basePrice = prices?.[rar] || 50;
+      const pMult = PRICE_MULTS[rar] || 1;
+      const avgPrice = basePrice * pMult;
+      const minCr = Math.round(avgPrice * amt0 * m * 0.8);
+      const maxCr = Math.round(avgPrice * amt1 * m * 1.2);
+      notes += `<span class="${RARITY_CLS[rar]||''}">${rar}</span>: ${avgPrice} × ${amt0}-${amt1} × ${m} ≈ <b>${minCr}–${maxCr}</b> кред<br>`;
+    }
+    if (!targetType) notes += `<span style="color:var(--yellow)">Укажите тип цели для точного расчёта</span><br>`;
+  } else if (type === 'expeditions') {
+    notes += `Экспедиции: кредиты из полей "Кредиты мин/макс"<br>`;
+  }
+  g('qe-calc-notes').innerHTML = notes;
+}
+
+function qeAddReq() { _qeAddReqRow({ factionId: 'bioengineers', operator: '>=', value: 0 }); }
+function qeAddPenalty() { _qeAddPenaltyRow({ factionId: 'bioengineers', amount: 10 }); }
+
+function _qeAddReqRow(r) {
+  const container = document.getElementById('qe-reqs');
+  const ri = container.children.length;
+  const fSel = Object.entries(FACTION_META).map(([k,v]) => `<option value="${k}" ${k===r.factionId?'selected':''}>${v.icon} ${v.label}</option>`).join('');
+  const opSel = ['>','>=','<','<=','=='].map(op => `<option value="${op}" ${op===r.operator?'selected':''}>${op}</option>`).join('');
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:4px;margin-bottom:4px;align-items:center';
+  div.dataset.req = ri;
+  div.innerHTML = `<select class="form-input" style="flex:2;font-size:11px" data-req-f="${ri}">${fSel}</select><select class="form-input" style="width:50px;font-size:11px" data-req-op="${ri}">${opSel}</select><input class="form-input mono" style="width:70px;font-size:11px" type="number" data-req-v="${ri}" value="${r.value||0}"><button class="btn btn-danger btn-sm" style="font-size:9px;padding:2px 6px" onclick="this.parentElement.remove()">✕</button>`;
+  container.appendChild(div);
+}
+
+function _qeAddPenaltyRow(p) {
+  const container = document.getElementById('qe-penalties');
+  const pi = container.children.length;
+  const fSel = Object.entries(FACTION_META).map(([k,v]) => `<option value="${k}" ${k===p.factionId?'selected':''}>${v.icon} ${v.label}</option>`).join('');
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:4px;margin-bottom:4px;align-items:center';
+  div.dataset.pen = pi;
+  div.innerHTML = `<select class="form-input" style="flex:2;font-size:11px" data-pen-f="${pi}">${fSel}</select><input class="form-input mono" style="width:70px;font-size:11px" type="number" data-pen-v="${pi}" value="${p.amount||10}"><button class="btn btn-danger btn-sm" style="font-size:9px;padding:2px 6px" onclick="this.parentElement.remove()">✕</button>`;
+  container.appendChild(div);
+}
+
+function qeSave() {
+  const g = id => document.getElementById(id);
+  const id = g('qe-id').value.trim();
+  if (!id) { toast('ID обязателен', 'err'); return; }
+
+  const questTypes = [];
+  if (g('qe-qt-daily').checked) questTypes.push('daily');
+  if (g('qe-qt-weekly').checked) questTypes.push('weekly');
+  if (g('qe-qt-repeatable').checked) questTypes.push('repeatable');
+  if (g('qe-qt-special').checked) questTypes.push('special');
+  if (!questTypes.length) { toast('Выберите хотя бы один тип расписания', 'err'); return; }
+
+  const rarities = [...document.querySelectorAll('.qe-rar:checked')].map(c => c.value);
+  const starChance = parseFloat(g('qe-starCh').value) || 0;
+
+  const reputationRequirements = [];
+  document.querySelectorAll('#qe-reqs [data-req]').forEach(el => {
+    const ri = el.dataset.req;
+    const factionId = el.querySelector('[data-req-f="'+ri+'"]')?.value;
+    const operator = el.querySelector('[data-req-op="'+ri+'"]')?.value;
+    const value = Number(el.querySelector('[data-req-v="'+ri+'"]')?.value || 0);
+    if (factionId) reputationRequirements.push({ factionId, operator, value });
+  });
+
+  const reputationPenalties = [];
+  document.querySelectorAll('#qe-penalties [data-pen]').forEach(el => {
+    const pi = el.dataset.pen;
+    const factionId = el.querySelector('[data-pen-f="'+pi+'"]')?.value;
+    const amount = Number(el.querySelector('[data-pen-v="'+pi+'"]')?.value || 0);
+    if (factionId && amount > 0) reputationPenalties.push({ factionId, amount });
+  });
+
+  const tmpl = {
+    id,
+    faction: g('qe-faction').value,
+    type: g('qe-type').value,
+    targetType: g('qe-targetType').value || null,
+    targetRarities: rarities,
+    amountRange: [Number(g('qe-amt0').value)||1, Number(g('qe-amt1').value)||1],
+    creditRange: [Number(g('qe-cr0').value)||0, Number(g('qe-cr1').value)||0],
+    xpRange: [Number(g('qe-xp0').value)||0, Number(g('qe-xp1').value)||0],
+    reputationGain: [Number(g('qe-rep0').value)||0, Number(g('qe-rep1').value)||0],
+    questTypes,
+    nameRu: g('qe-nameRu').value.trim(),
+    nameEn: g('qe-nameEn').value.trim(),
+    descRu: g('qe-descRu').value.trim(),
+    descEn: g('qe-descEn').value.trim(),
+    reputationRequirements,
+    reputationPenalties,
+    ...(starChance > 0 ? { starChance, starRange: [Number(g('qe-star0').value)||0, Number(g('qe-star1').value)||0] } : {}),
+  };
+
+  if (_qeEditIdx >= 0) {
+    _questTemplates[_qeEditIdx] = tmpl;
+  } else {
+    if (_questTemplates.some(t => t.id === tmpl.id)) { toast('ID уже существует!', 'err'); return; }
+    _questTemplates.push(tmpl);
+  }
+
+  document.getElementById('quest-count').textContent = _questTemplates.length;
+  closeQuestEditor();
+  renderQuestTemplates();
+  toast(_qeEditIdx >= 0 ? 'Шаблон обновлён (не забудь сохранить!)' : 'Шаблон добавлен (не забудь сохранить!)');
+}
+
+function questDeleteRow(idx) {
+  if (!confirm('Удалить шаблон ' + (_questTemplates[idx]?.id || idx) + '?')) return;
+  _questTemplates.splice(idx, 1);
+  document.getElementById('quest-count').textContent = _questTemplates.length;
+  renderQuestTemplates();
+  toast('Шаблон удалён (не забудь сохранить!)');
+}
+
+async function saveAllTemplates() {
+  if (!_questTemplates.length) { toast('Нет шаблонов для сохранения', 'err'); return; }
+  try {
+    const r = await api('/api/admin/quests/templates-bulk', 'PUT', { templates: _questTemplates });
+    if (r.ok) {
+      toast(`Сохранено ${r.count} шаблонов!`);
+      loadQuestTemplates();
+    } else toast(r.error || 'Ошибка', 'err');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function questResetDefaults() {
+  if (!confirm('Сбросить шаблоны к дефолтам из gameConfig.js? Все настройки будут потеряны.')) return;
+  try {
+    const r = await api('/api/admin/quests/templates-reset', 'POST');
+    if (r.ok) { toast('Шаблоны сброшены к дефолтам'); loadQuestTemplates(); }
+    else toast(r.error || 'Ошибка', 'err');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function questWipeRefresh() {
+  if (!confirm('Сбросить ВСЕ активные квесты и таймеры обновления для ВСЕХ игроков? Квесты перегенерируются при следующем входе.')) return;
+  try {
+    const r = await api('/api/admin/quests/wipe-refresh', 'POST');
+    if (r.ok) toast('Квесты и таймеры сброшены');
+    else toast(r.error || 'Ошибка', 'err');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function questLoadPreset() {
+  if (_questTemplates.length && !confirm('Загрузить текущий пресет? Несохранённые изменения будут потеряны.')) return;
+  try {
+    const r = await api('/api/admin/quests/templates');
+    _questTemplates = r.templates || [];
+    document.getElementById('quest-count').textContent = _questTemplates.length;
+    renderQuestTemplates();
+    toast(`Загружено ${_questTemplates.length} шаблонов из текущей конфигурации`);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function saveQuestConfig() {
+  const g = id => Number(document.getElementById(id).value);
+  try {
+    await api('/api/admin/quests/config', 'PUT', {
+      daily:   { count: g('qc-daily-count'),  refreshHours: g('qc-daily-refresh'), freeRerolls: g('qc-daily-rerolls') },
+      weekly:  { count: g('qc-weekly-count'),  refreshHours: g('qc-weekly-refresh'), freeRerolls: 0 },
+      special: { baseChancePercent: g('qc-special-chance'), maxActive: 1, rewardMultiplier: 1.5, amountMultiplier: 1.2 },
+      buyout:  { enabled: true, costMultiplier: parseFloat(document.getElementById('qc-buyout-mult').value), maxPerDay: g('qc-buyout-max'), allowedTypes: ['daily'] },
+    });
+    toast('Настройки квестов сохранены!');
+  } catch (e) { toast(e.message, 'err'); }
+}
+</script>
+
+<script>
+// ─── Referrals ────────────────────────────────────────────────────────────────
+let _topReferrers = [];
+
+function showReferrals() {
+  document.getElementById('referralsModal').style.display = 'flex';
+  resetReferrerDetails();
+  loadReferralData();
+}
+function closeReferrals() { document.getElementById('referralsModal').style.display = 'none'; }
+
+function resetReferrerDetails() {
+  document.getElementById('ref-referrer-id').value = '';
+  document.getElementById('ref-detail-wrap').style.display = 'none';
+  document.getElementById('ref-detail-body').innerHTML = '';
+  document.getElementById('ref-detail-meta').textContent = 'Выбери игрока из топа или введи ID вручную';
+}
+
+function pickReferrer(userId) {
+  document.getElementById('ref-referrer-id').value = String(userId || '');
+  loadReferrerAccounts();
+}
+
+async function loadReferralData() {
+  try {
+    const [stats, config] = await Promise.all([
+      api('/api/referral-stats'),
+      api('/api/referral-config')
+    ]);
+
+    // Stats
+    document.getElementById('ref-total').textContent = stats.totalReferrals ?? '—';
+    document.getElementById('ref-active').textContent = stats.activatedReferrals ?? '—';
+    document.getElementById('ref-credits').textContent = Number(stats.totalCreditsAwarded || 0).toLocaleString();
+    document.getElementById('ref-stars').textContent = Number(stats.totalStarsAwarded || 0).toLocaleString();
+
+    // Top referrers
+    const topEl = document.getElementById('ref-top-list');
+    _topReferrers = stats.topReferrers || [];
+    if (stats.topReferrers && stats.topReferrers.length > 0) {
+      topEl.innerHTML = '<div class="form-label" style="margin-bottom:6px">Топ рефереры</div>' +
+        '<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Игрок</th><th>ID</th><th>Рефералов</th><th>Активных</th><th></th></tr></thead><tbody>' +
+        stats.topReferrers.map((r, i) =>
+          `<tr>
+            <td>${i + 1}</td>
+            <td>${r.first_name || r.username || 'ID:' + r.user_id}</td>
+            <td class="mono">${r.user_id}</td>
+            <td>${r.referral_count}</td>
+            <td>${r.activated_count || 0}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="pickReferrer('${r.user_id}')">Аккаунты</button></td>
+          </tr>`
+        ).join('') + '</tbody></table></div>';
+    } else {
+      topEl.innerHTML = '<div class="empty" style="padding:12px;font-size:12px">Рефереров пока нет</div>';
+    }
+
+    // Config fields
+    const C = config || {};
+    const v = (id, key, def) => { document.getElementById(id).value = C[key] ?? def; };
+    v('ref-minExp', 'referral.minExpeditionsForActivation', 3);
+    v('ref-minCred', 'referral.minCreditsForActivation', 500);
+    v('ref-delay', 'referral.rewardDelayMs', 3600000);
+    v('ref-rewReferrer', 'referral.referrerRewardCredits', 500);
+    v('ref-rewReferral', 'referral.referralRewardCredits', 300);
+    v('ref-credPct', 'referral.baseCreditsPercent', 5);
+    v('ref-starsPct', 'referral.baseStarsPercent', 5);
+    v('ref-maxPct', 'referral.maxTotalPercent', 15);
+    v('ref-maxCredDay', 'referral.maxCreditsPerDay', 5000);
+    v('ref-maxStarsDay', 'referral.maxStarsPerDay', 50);
+    v('ref-minAge', 'referral.minTelegramAccountAgeDays', 3);
+    v('ref-starsMode', 'referral.starsIncomeMode', 'stars');
+  } catch (e) {
+    toast('Ошибка загрузки рефералов: ' + e.message, 'err');
+  }
+}
+
+async function loadReferrerAccounts() {
+  const input = document.getElementById('ref-referrer-id');
+  const rawId = input.value.trim();
+  if (!rawId) {
+    toast('Введи ID реферера', 'err');
+    return;
+  }
+
+  const limitVal = Number(document.getElementById('ref-referrer-limit').value || 200);
+  const limit = Math.max(1, Math.min(limitVal, 1000));
+
+  try {
+    const data = await api(`/api/referral-referrer/${encodeURIComponent(rawId)}?limit=${limit}`);
+    const tbody = document.getElementById('ref-detail-body');
+    const wrap = document.getElementById('ref-detail-wrap');
+    const meta = document.getElementById('ref-detail-meta');
+
+    const referrerName = data.referrer?.first_name || data.referrer?.username || `ID ${rawId}`;
+    meta.textContent = `Реферер: ${referrerName} (${data.referrer?.id}) · Всего: ${data.total} · Активированы: ${data.activated}`;
+
+    if (!data.referrals || !data.referrals.length) {
+      wrap.style.display = 'block';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3)">У этого реферера пока нет приглашённых аккаунтов</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.referrals.map((u) => {
+      const name = u.first_name || u.username || '—';
+      const created = u.created_at ? new Date(u.created_at).toLocaleString('ru') : '—';
+      const lastSeen = u.last_active_at ? new Date(u.last_active_at).toLocaleString('ru') : '—';
+      return `<tr>
+        <td class="mono">${u.id}</td>
+        <td>${esc(name)}${u.is_banned ? ' <span class="tag tag-red">BAN</span>' : ''}</td>
+        <td>${u.referral_activated ? '<span class="tag tag-green">Да</span>' : '<span class="tag tag-yellow">Нет</span>'}</td>
+        <td>${Number(u.total_expeditions || 0).toLocaleString()}</td>
+        <td>${Number(u.total_finds || 0).toLocaleString()}</td>
+        <td>${Number(u.credits || 0).toLocaleString()}</td>
+        <td style="font-size:11px;color:var(--text2)">${created}</td>
+        <td style="font-size:11px;color:var(--text2)">${lastSeen}</td>
+      </tr>`;
+    }).join('');
+    wrap.style.display = 'block';
+  } catch (e) {
+    toast('Ошибка загрузки аккаунтов: ' + e.message, 'err');
+  }
+}
+
+async function saveReferralConfig() {
+  const cfg = {
+    'referral.minExpeditionsForActivation': Number(document.getElementById('ref-minExp').value),
+    'referral.minCreditsForActivation': Number(document.getElementById('ref-minCred').value),
+    'referral.rewardDelayMs': Number(document.getElementById('ref-delay').value),
+    'referral.referrerRewardCredits': Number(document.getElementById('ref-rewReferrer').value),
+    'referral.referralRewardCredits': Number(document.getElementById('ref-rewReferral').value),
+    'referral.baseCreditsPercent': Number(document.getElementById('ref-credPct').value),
+    'referral.baseStarsPercent': Number(document.getElementById('ref-starsPct').value),
+    'referral.maxTotalPercent': Number(document.getElementById('ref-maxPct').value),
+    'referral.maxCreditsPerDay': Number(document.getElementById('ref-maxCredDay').value),
+    'referral.maxStarsPerDay': Number(document.getElementById('ref-maxStarsDay').value),
+    'referral.minTelegramAccountAgeDays': Number(document.getElementById('ref-minAge').value),
+    'referral.starsIncomeMode': document.getElementById('ref-starsMode').value,
+  };
+  try {
+    const r = await api('/api/referral-config', 'POST', cfg);
+    if (r.ok) toast('Настройки рефералов сохранены!');
+    else toast(r.error || 'Ошибка', 'err');
+  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
+}
+</script>
+
+<script>
+// ─── Analytics ────────────────────────────────────────────────────────────────
+let _botUsername = null;
+let _analyticsLinks = [];
+let _chatSources = [];
+let _selectedChatSourceId = null;
+
+function showAnalytics() {
+  document.getElementById('analyticsModal').style.display = 'flex';
+  loadAnalyticsLinks();
+  loadChatSources();
+  if (!_botUsername) fetchBotUsername();
+}
+function closeAnalytics() { document.getElementById('analyticsModal').style.display = 'none'; }
+
+async function fetchBotUsername() {
+  try {
+    const r = await api('/api/analytics/bot-info');
+    _botUsername = r.username;
+  } catch {}
+}
+
+async function loadAnalyticsLinks() {
+  try {
+    const r = await api('/api/analytics/links');
+    _analyticsLinks = r.links || [];
+    renderAnalyticsLinks();
+  } catch (e) { toast('Ошибка загрузки ссылок: ' + e.message, 'err'); }
+}
+
+async function loadChatSources() {
+  try {
+    const r = await api('/api/chat-sources');
+    _chatSources = r.chatSources || [];
+    renderChatSources();
+  } catch (e) {
+    toast('Ошибка загрузки чатов: ' + e.message, 'err');
+  }
+}
+
+function suspiciousDisplayName(p) {
+  if (p.username) return '@' + p.username;
+  if (p.firstName) return p.firstName;
+  return 'ID ' + p.userId;
+}
+
+function renderSuspiciousUser(user) {
+  const wrap = document.getElementById('sb-user-wrap');
+  const detail = document.getElementById('sb-user-detail');
+  if (!user) {
+    wrap.style.display = 'none';
+    detail.innerHTML = '';
+    return;
+  }
+
+  const reasons = Array.isArray(user.reasons) ? user.reasons.join('; ') : '—';
+  detail.innerHTML = `
+    <div><b>${esc(suspiciousDisplayName(user))}</b> (${user.userId})</div>
+    <div>Подозрительность: <b>${Number(user.suspicion || 0).toFixed(1)}%</b> · Доверие: <b>${(Number(user.confidence || 0) * 100).toFixed(1)}%</b></div>
+    <div>Экспедиций: ${Number(user.expeditions || 0).toLocaleString()} · Дней активности: ${Number(user.activeDays || 0)} · В день: ${Number(user.avgPerDay || 0).toFixed(2)}</div>
+    <div>Интервалы: ${Number(user.intervalsCount || 0)} · 9-11 мин: ${(Number(user.nearTenRatio || 0) * 100).toFixed(1)}% · CV: ${Number(user.cv || 0).toFixed(3)}</div>
+    <div>Причины: ${esc(reasons)}</div>
+  `;
+  wrap.style.display = 'block';
+}
+
+function renderSuspiciousTop(list) {
+  const tbody = document.getElementById('sb-top-body');
+  if (!list || !list.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3)">Ничего не найдено по текущим условиям</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map((p, i) => {
+    const reasons = Array.isArray(p.reasons) ? p.reasons.slice(0, 2).join('; ') : '—';
+    return `<tr>
+      <td>${i + 1}</td>
+      <td class="mono">${p.userId}</td>
+      <td>${esc(suspiciousDisplayName(p))}</td>
+      <td><b>${Number(p.suspicion || 0).toFixed(1)}%</b></td>
+      <td>${(Number(p.confidence || 0) * 100).toFixed(1)}%</td>
+      <td>${Number(p.expeditions || 0).toLocaleString()}</td>
+      <td>${Number(p.avgPerDay || 0).toFixed(1)}</td>
+      <td>${(Number(p.nearTenRatio || 0) * 100).toFixed(1)}%</td>
+      <td>${Number(p.cv || 0).toFixed(3)}</td>
+      <td style="font-size:11px;color:var(--text2)">${esc(reasons)}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function runSuspiciousAnalysis() {
+  const days = Number(document.getElementById('sb-days').value || 30);
+  const top = Number(document.getElementById('sb-top').value || 20);
+  const min = Number(document.getElementById('sb-min').value || 80);
+  const userId = document.getElementById('sb-user-id').value.trim();
+  const meta = document.getElementById('sb-meta');
+
+  const q = new URLSearchParams();
+  q.set('days', String(days));
+  q.set('top', String(top));
+  q.set('min', String(min));
+  if (userId) q.set('userId', userId);
+
+  meta.textContent = 'Считаю...';
+  try {
+    const r = await api('/api/analytics/suspicious-expeditions?' + q.toString());
+    renderSuspiciousTop(r.top || []);
+    renderSuspiciousUser(r.user || null);
+
+    const m = r.meta || {};
+    meta.textContent = `Окно: ${m.days || days} дн. · Пользователей в окне: ${Number(m.totalUsersInWindow || 0).toLocaleString()} · Проанализировано: ${Number(m.analyzedUsers || 0).toLocaleString()} (min=${m.minExpeditions || min})`;
+
+    if (userId && !r.user) {
+      toast('У этого ID нет завершённых экспедиций в выбранном окне', 'err');
+    }
+  } catch (e) {
+    meta.textContent = 'Ошибка анализа';
+    toast('Ошибка анализа: ' + e.message, 'err');
+  }
+}
+
+function renderAnalyticsLinks() {
+  const tbody = document.getElementById('al-tbody');
+  if (!_analyticsLinks.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3)">Нет ссылок — создай первую ↑</td></tr>';
+    return;
+  }
+  tbody.innerHTML = _analyticsLinks.map(l => {
+    const lastAt = l.last_start_at ? new Date(l.last_start_at).toLocaleString('ru') : '—';
+    // Calculate new users from unique_users (approximate)
+    return `<tr style="cursor:pointer" onclick="showLinkDetail('${l.source}')">
+      <td><code class="mono" style="color:var(--accent);font-size:11px">${esc(l.source)}</code></td>
+      <td>${esc(l.label) || '<span style="color:var(--text3)">—</span>'}</td>
+      <td style="font-weight:600">${l.starts_count}</td>
+      <td>${l.unique_users}</td>
+      <td>—</td>
+      <td style="font-size:11px;color:var(--text2)">${lastAt}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteLink('${l.source}')" title="Удалить">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+
+async function createTrackingLink() {
+  const source = document.getElementById('al-source').value.trim();
+  const label = document.getElementById('al-label').value.trim();
+  if (!source) { toast('Введи код ссылки', 'err'); return; }
+  if (!/^[a-zA-Z0-9_-]+$/.test(source)) { toast('Код: только латиница, цифры, _ и -', 'err'); return; }
+  try {
+    const r = await api('/api/analytics/links', 'POST', { source, label });
+    if (r.error) { toast(r.error, 'err'); return; }
+    toast('Ссылка создана!');
+    document.getElementById('al-source').value = '';
+    document.getElementById('al-label').value = '';
+    // Show generated link
+    const linkUrl = _botUsername
+      ? `https://t.me/${_botUsername}?start=src_${source}`
+      : `https://t.me/YOUR_BOT?start=src_${source}`;
+    document.getElementById('al-link-url').value = linkUrl;
+    document.getElementById('al-generated-link').style.display = 'block';
+    loadAnalyticsLinks();
+  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
+}
+
+function getChatLinkUrl(code) {
+  if (!code) return '';
+  return _botUsername
+    ? `https://t.me/${_botUsername}?start=${encodeURIComponent(code.startsWith('chat_') ? code : `chat_${code}`)}`
+    : `https://t.me/YOUR_BOT?start=${encodeURIComponent(code.startsWith('chat_') ? code : `chat_${code}`)}`;
+}
+
+function fillChatSourceForm(chat) {
+  if (!chat) return;
+  _selectedChatSourceId = String(chat.chat_id);
+  document.getElementById('cs-chat-id').value = chat.chat_id ?? '';
+  document.getElementById('cs-chat-title').value = chat.chat_title ?? '';
+  document.getElementById('cs-owner-id').value = chat.owner_user_id ?? '';
+  document.getElementById('cs-owner-username').value = chat.owner_username ?? chat.owner_current_username ?? '';
+  document.getElementById('cs-owner-percent').value = chat.owner_share_percent ?? 0;
+  document.getElementById('cs-auto-delete-low-rarity').checked = !!chat.chat_auto_delete_low_rarity;
+  document.getElementById('cs-link-code').value = chat.link_code ?? '';
+  const linkUrl = getChatLinkUrl(chat.link_code || `chat_${chat.chat_id}`);
+  document.getElementById('cs-link-url').value = linkUrl;
+  document.getElementById('cs-generated-link').style.display = 'block';
+  // Make Chat ID and Link Code readonly - they're strict references
+  document.getElementById('cs-chat-id').readOnly = true;
+  document.getElementById('cs-link-code').readOnly = true;
+}
+
+function selectChatSource(chatId) {
+  const chat = _chatSources.find((c) => String(c.chat_id) === String(chatId));
+  if (chat) fillChatSourceForm(chat);
+}
+
+function clearChatSourceForm() {
+  _selectedChatSourceId = null;
+  document.getElementById('cs-chat-id').value = '';
+  document.getElementById('cs-chat-title').value = '';
+  document.getElementById('cs-owner-id').value = '';
+  document.getElementById('cs-owner-username').value = '';
+  document.getElementById('cs-owner-percent').value = 0;
+  document.getElementById('cs-auto-delete-low-rarity').checked = false;
+  document.getElementById('cs-link-code').value = '';
+  document.getElementById('cs-generated-link').style.display = 'none';
+  // Make Chat ID and Link Code editable again for new chat
+  document.getElementById('cs-chat-id').readOnly = false;
+  document.getElementById('cs-link-code').readOnly = false;
+}
+
+function syncChatSourceFormFromChatId() {
+  const chatId = document.getElementById('cs-chat-id').value.trim();
+  if (!chatId) return;
+  const chat = _chatSources.find((c) => String(c.chat_id) === String(chatId));
+  if (!chat) return;
+  fillChatSourceForm(chat);
+}
+
+async function saveChatSource() {
+  const chatId = document.getElementById('cs-chat-id').value.trim();
+  const chatTitle = document.getElementById('cs-chat-title').value.trim();
+  const ownerUserId = document.getElementById('cs-owner-id').value.trim();
+  const ownerUsername = document.getElementById('cs-owner-username').value.trim();
+  const ownerSharePercent = Number(document.getElementById('cs-owner-percent').value || 0);
+  const chatAutoDeleteLowRarity = document.getElementById('cs-auto-delete-low-rarity').checked;
+  const linkCode = document.getElementById('cs-link-code').value.trim();
+
+  if (!chatId && !_selectedChatSourceId) { toast('Введи Chat ID', 'err'); return; }
+
+  try {
+    const isEditing = !!_selectedChatSourceId;
+    const routeChatId = isEditing ? _selectedChatSourceId : chatId;
+    const payload = {
+      chatTitle: chatTitle || null,
+      ownerUserId: ownerUserId || null,
+      ownerUsername: ownerUsername || null,
+      ownerSharePercent,
+      chatAutoDeleteLowRarity,
+      linkCode: linkCode || null,
+    };
+    console.log('[saveChatSource] isEditing:', isEditing, 'payload:', JSON.stringify(payload), 'routeChatId:', routeChatId);
+    const r = await api(isEditing ? `/api/chat-sources/${encodeURIComponent(routeChatId)}` : '/api/chat-sources', isEditing ? 'PATCH' : 'POST', isEditing ? payload : { ...payload, chatId });
+    if (r.error) { toast(r.error, 'err'); return; }
+    const source = r.chatSource;
+    toast('Чат сохранён');
+    fillChatSourceForm(source);
+    loadChatSources();
+  } catch (e) {
+    toast('Ошибка: ' + e.message, 'err');
+  }
+}
+
+function copyChatLink() {
+  const input = document.getElementById('cs-link-url');
+  navigator.clipboard.writeText(input.value).then(() => toast('Скопировано!')).catch(() => {
+    input.select(); document.execCommand('copy'); toast('Скопировано!');
+  });
+}
+
+async function clearChatStars(chatId) {
+  if (!confirm('Сбросить счётчик Stars после последней очистки?')) return;
+  try {
+    const r = await api(`/api/chat-sources/${encodeURIComponent(chatId)}/clear-stars`, 'POST');
+    if (r.ok) {
+      toast('Счётчик очищен');
+      loadChatSources();
+      if (String(document.getElementById('cs-chat-id').value.trim()) === String(chatId)) {
+        fillChatSourceForm(r.chatSource || { chat_id: chatId, link_code: `chat_${chatId}` });
+      }
+    } else {
+      toast(r.error || 'Ошибка', 'err');
+    }
+  } catch (e) {
+    toast('Ошибка: ' + e.message, 'err');
+  }
+}
+
+async function showChatSourceDetail(chatId) {
+  const source = _chatSources.find((c) => String(c.chat_id) === String(chatId));
+  const detail = document.getElementById('cs-detail');
+  const title = document.getElementById('cs-detail-title');
+  const body = document.getElementById('cs-detail-body');
+  if (!source) return;
+  title.textContent = `${source.chat_title || source.chat_id} · ${getChatLinkUrl(source.link_code || `chat_${source.chat_id}`)}`;
+  detail.style.display = 'block';
+  body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3)">Загрузка...</td></tr>';
+  try {
+    const r = await api(`/api/chat-sources/${encodeURIComponent(chatId)}/users?limit=200`);
+    const users = r.users || [];
+    if (!users.length) {
+      body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3)">Пока никто не зарегистрировался через этот чат</td></tr>';
+      return;
+    }
+    body.innerHTML = users.map((u) => {
+      const name = u.first_name || u.username || '—';
+      const created = u.created_at ? new Date(u.created_at).toLocaleString('ru') : '—';
+      const lastSeen = u.last_active_at ? new Date(u.last_active_at).toLocaleString('ru') : '—';
+      return `<tr>
+        <td class="mono">${u.id}</td>
+        <td>${esc(name)}</td>
+        <td>${esc(u.registration_source_type || '—')}</td>
+        <td>${Number(u.total_expeditions || 0).toLocaleString()}</td>
+        <td>${Number(u.total_stars_donated || 0).toLocaleString()}</td>
+        <td style="font-size:11px;color:var(--text2)">${created}</td>
+        <td style="font-size:11px;color:var(--text2)">${lastSeen}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red)">Ошибка: ${esc(e.message)}</td></tr>`;
+  }
+}
+
+function renderChatSources() {
+  const tbody = document.getElementById('cs-tbody');
+  if (!_chatSources.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3)">Чатов пока нет</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = _chatSources.map((c) => {
+    const updated = c.updated_at ? new Date(c.updated_at).toLocaleString('ru') : '—';
+    const linkUrl = getChatLinkUrl(c.link_code || `chat_${c.chat_id}`);
+    const ownerUsernames = [c.owner_username, c.owner_current_username].filter(Boolean);
+    const uniqueOwnerUsernames = ownerUsernames.filter((v, i, arr) => arr.findIndex((item) => String(item).toLowerCase() === String(v).toLowerCase()) === i);
+    const ownerUsernamesHtml = uniqueOwnerUsernames.length
+      ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">${esc(uniqueOwnerUsernames.join(', '))}</div>`
+      : '';
+    return `<tr style="cursor:pointer" onclick="showChatSourceDetail('${c.chat_id}')">
+      <td>${esc(c.chat_title || String(c.chat_id))}</td>
+      <td class="mono" style="font-size:11px;color:var(--accent)">${esc(c.link_code || '—')}</td>
+      <td class="mono">${esc(c.owner_user_id || '—')}${ownerUsernamesHtml}</td>
+      <td>${Number(c.owner_share_percent || 0).toFixed(1)}%</td>
+      <td>${c.chat_auto_delete_low_rarity ? '<span class="tag tag-green">да</span>' : '<span style="color:var(--text3)">—</span>'}</td>
+      <td>${Number(c.registrations || 0)}</td>
+      <td>${Number(c.donated_stars_total || 0).toLocaleString()}</td>
+      <td>${Number(c.stars_since_clear || 0).toLocaleString()}</td>
+      <td style="font-size:11px;color:var(--text2)">${updated}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); selectChatSource('${c.chat_id}')">✎</button>
+        <button class="btn btn-warning btn-sm" onclick="event.stopPropagation(); clearChatStars('${c.chat_id}')">Clear</button>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); navigator.clipboard.writeText('${linkUrl}').then(() => toast('Скопировано!'))">Copy</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function copyLink() {
+  const input = document.getElementById('al-link-url');
+  navigator.clipboard.writeText(input.value).then(() => toast('Скопировано!')).catch(() => {
+    input.select(); document.execCommand('copy'); toast('Скопировано!');
+  });
+}
+
+function getLinkUrl(source) {
+  return _botUsername
+    ? `https://t.me/${_botUsername}?start=src_${source}`
+    : `https://t.me/YOUR_BOT?start=src_${source}`;
+}
+
+async function deleteLink(source) {
+  if (!confirm(`Удалить ссылку "${source}" и всю статистику?`)) return;
+  try {
+    await api('/api/analytics/links/' + encodeURIComponent(source), 'DELETE');
+    toast('Ссылка удалена');
+    document.getElementById('al-detail').style.display = 'none';
+    loadAnalyticsLinks();
+  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
+}
+
+async function showLinkDetail(source) {
+  const detail = document.getElementById('al-detail');
+  detail.style.display = 'block';
+  document.getElementById('al-detail-title').textContent = `${source} — ${getLinkUrl(source)}`;
+
+  try {
+    const r = await api('/api/analytics/events/' + encodeURIComponent(source) + '?days=30');
+
+    // Daily chart
+    const chart = document.getElementById('al-daily-chart');
+    const labels = document.getElementById('al-daily-labels');
+    const daily = r.daily || [];
+    if (!daily.length) {
+      chart.innerHTML = '<div style="color:var(--text3);font-size:12px">Нет данных</div>';
+      labels.innerHTML = '';
+    } else {
+      const maxVal = Math.max(...daily.map(d => d.starts), 1);
+      chart.innerHTML = daily.map(d => {
+        const h = Math.max(2, Math.round((d.starts / maxVal) * 90));
+        const newH = Math.max(0, Math.round((d.new_users / maxVal) * 90));
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;min-width:18px" title="${d.day}: ${d.starts} кликов, ${d.unique_users} уник., ${d.new_users} новых">
+          <div style="font-size:9px;color:var(--text2)">${d.starts}</div>
+          <div style="position:relative;width:100%;height:${h}px;border-radius:3px 3px 0 0;background:var(--accent);opacity:0.7">
+            <div style="position:absolute;bottom:0;left:0;right:0;height:${newH}px;background:var(--green);border-radius:0 0 0 0;opacity:0.9"></div>
+          </div>
+        </div>`;
+      }).join('');
+      labels.innerHTML = daily.map(d => {
+        const day = new Date(d.day);
+        return `<div style="flex:1;min-width:18px;text-align:center;font-size:8px;color:var(--text3)">${day.getDate()}.${day.getMonth()+1}</div>`;
+      }).join('');
+    }
+
+    // Recent events table
+    const tbody = document.getElementById('al-events-tbody');
+    const recent = r.recent || [];
+    if (!recent.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3)">Нет запусков</td></tr>';
+    } else {
+      tbody.innerHTML = recent.map(e => `<tr>
+        <td>${esc(e.username) || '<span style="color:var(--text3)">—</span>'}</td>
+        <td class="mono" style="font-size:11px">${e.user_id}</td>
+        <td>${e.is_new_user ? '<span style="color:var(--green)">✓ Новый</span>' : '—'}</td>
+        <td style="font-size:11px;color:var(--text2)">${new Date(e.created_at).toLocaleString('ru')}</td>
+      </tr>`).join('');
+    }
+  } catch (e) {
+    toast('Ошибка загрузки деталей: ' + e.message, 'err');
+  }
+}
+</script>
+</body>
+</html>

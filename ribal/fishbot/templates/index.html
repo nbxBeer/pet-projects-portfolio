@@ -1,0 +1,2312 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FishBot 🐟</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d0f;
+    --surface: #111518;
+    --surface2: #161b1f;
+    --border: #1e262c;
+    --border2: #2a3540;
+    --green: #00e676;
+    --green-dim: #00b35a;
+    --green-glow: rgba(0,230,118,0.12);
+    --red: #ff4f4f;
+    --yellow: #ffc107;
+    --blue: #29b6f6;
+    --text: #cdd9e5;
+    --text-dim: #637585;
+    --text-bright: #eaf2f8;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid noise texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .layout {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--green-glow);
+    border: 1px solid var(--green-dim);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .logo-text {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-bright);
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span { color: var(--green); }
+
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* STATS */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--green);
+    opacity: 0.4;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  /* MAIN GRID */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-title {
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  /* ACCOUNTS LIST */
+  .accounts-list { padding: 8px; }
+
+  .account-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: var(--surface2);
+    transition: border-color 0.2s;
+  }
+
+  .account-item:hover { border-color: var(--border2); }
+  .account-item.disabled { opacity: 0.5; }
+
+  .account-main { min-width: 0; }
+
+  .account-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-bright);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .badge-running {
+    background: rgba(0,230,118,0.12);
+    color: var(--green);
+    border: 1px solid rgba(0,230,118,0.3);
+  }
+
+  .badge-stopped {
+    background: rgba(255,79,79,0.1);
+    color: var(--red);
+    border: 1px solid rgba(255,79,79,0.3);
+  }
+
+  .account-meta {
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 6px;
+  }
+
+  .account-meta span { display: flex; align-items: center; gap: 4px; }
+
+  .next-send {
+    font-size: 11px;
+    color: var(--green-dim);
+    margin-top: 6px;
+  }
+
+  .account-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--border2);
+    color: var(--text-dim);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--green-dim);
+    color: var(--text);
+  }
+
+  .btn-primary {
+    background: var(--green-glow);
+    border-color: var(--green-dim);
+    color: var(--green);
+  }
+
+  .btn-primary:hover {
+    background: rgba(0,230,118,0.2);
+    box-shadow: 0 0 12px rgba(0,230,118,0.15);
+  }
+
+  .btn-danger {
+    background: rgba(255,79,79,0.1);
+    border-color: rgba(255,79,79,0.3);
+    color: var(--red);
+  }
+
+  .btn-danger:hover { background: rgba(255,79,79,0.2); }
+
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+  .btn-icon {
+    padding: 6px 8px;
+    background: transparent;
+    border-color: var(--border2);
+    color: var(--text-dim);
+  }
+
+  .btn-icon:hover { border-color: var(--border2); color: var(--text); }
+
+  .empty-state {
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--text-dim);
+  }
+
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-text { font-size: 13px; }
+
+  /* LOGS */
+  .logs-container {
+    max-height: 380px;
+    overflow-y: auto;
+    padding: 8px;
+    font-size: 11px;
+  }
+
+  .log-entry {
+    display: grid;
+    grid-template-columns: auto 80px 1fr auto;
+    gap: 8px;
+    align-items: baseline;
+    padding: 6px 8px;
+    border-radius: 4px;
+    transition: background 0.1s;
+  }
+
+  .log-entry:hover { background: var(--surface2); }
+
+  .log-time { color: var(--text-dim); font-size: 10px; }
+  .log-account { color: var(--blue); font-weight: 500; }
+  .log-event { }
+  .log-event.sent { color: var(--green); }
+  .log-event.error { color: var(--red); }
+  .log-event.sleep { color: var(--yellow); }
+  .log-event.flood_wait { color: var(--yellow); }
+  .log-event.crash { color: var(--red); font-weight: 700; }
+  .log-event.banned { color: var(--red); font-weight: 700; }
+  .log-event.forest_banned { color: var(--red); font-weight: 700; }
+  .log-event.auth_key_duplicated { color: var(--red); font-weight: 700; }
+  .log-event.casual_chat { color: var(--text-dim); }
+  .log-event.casual_dm { color: var(--text-dim); font-style: italic; }
+  .log-event.net_purchased { color: var(--blue); font-weight: 600; }
+  .log-event.proxy_dead { color: var(--red); }
+  .log-event.proxy_failed { color: var(--yellow); }
+  .log-details { color: var(--text-dim); font-size: 10px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 540px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(20px);
+    transition: transform 0.2s;
+    position: relative;
+  }
+
+  .modal-overlay.active .modal { transform: translateY(0); }
+
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-bright);
+  }
+
+  .modal-body { padding: 20px 24px; }
+
+  .form-group { margin-bottom: 18px; }
+
+  label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 7px;
+  }
+
+  .label-hint {
+    font-size: 10px;
+    color: var(--text-dim);
+    opacity: 0.7;
+    text-transform: none;
+    letter-spacing: 0;
+    display: block;
+    margin-top: 2px;
+    margin-bottom: 5px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--green-dim);
+    box-shadow: 0 0 0 3px var(--green-glow);
+  }
+
+  textarea { resize: vertical; min-height: 70px; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .range-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  input[type=range] {
+    padding: 0;
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border2);
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--green);
+    cursor: pointer;
+    box-shadow: 0 0 6px var(--green);
+  }
+
+  .range-val {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--green);
+    min-width: 48px;
+    text-align: right;
+  }
+
+  .toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .toggle {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+
+  .toggle input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border2);
+    border-radius: 22px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    left: 3px; top: 3px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  .toggle input:checked + .toggle-slider { background: var(--green-dim); }
+  .toggle input:checked + .toggle-slider::before {
+    transform: translateX(18px);
+    background: white;
+  }
+
+  .modal-footer {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  /* file upload */
+  .file-drop {
+    border: 2px dashed var(--border2);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .file-drop:hover, .file-drop.drag { border-color: var(--green-dim); background: var(--green-glow); }
+  .file-drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .file-drop-icon { font-size: 24px; margin-bottom: 6px; }
+  .file-drop-text { font-size: 12px; color: var(--text-dim); }
+  .file-drop-name { font-size: 12px; color: var(--green); margin-top: 4px; font-weight: 600; }
+
+  /* TOAST */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--text);
+    min-width: 240px;
+    max-width: 400px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    cursor: pointer;
+    animation: slideIn 0.2s ease;
+  }
+
+  .toast.success { border-left: 3px solid var(--green); }
+  .toast.error { border-left: 3px solid var(--red); }
+  .toast.info { border-left: 3px solid var(--blue); }
+
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* Chat group separator */
+  .chat-group { margin-bottom: 4px; }
+
+  .chat-group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 8px 6px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 6px;
+  }
+
+  .chat-group-header .chat-label {
+    color: var(--blue);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .chat-group-header .chat-count {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  @media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 500px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .account-actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🐟</div>
+      <div class="logo-text">Fish<span>Bot</span></div>
+    </div>
+    <div class="header-status">
+      <div class="dot"></div>
+      <span id="status-text">инициализация...</span>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Аккаунты</div>
+      <div class="stat-value" id="stat-total">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Активных</div>
+      <div class="stat-value" id="stat-active">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Сегодня отправлено</div>
+      <div class="stat-value" id="stat-today">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Всего отправлено</div>
+      <div class="stat-value" id="stat-total-sent">—</div>
+    </div>
+  </div>
+
+  <!-- FOREST MODULE -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+      <div class="card-title">TheForrestLake</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="setAllForest(false)">Выключить лес</button>
+        <button class="btn btn-ghost btn-sm" onclick="setAllForest(true)">Включить лес</button>
+      </div>
+    </div>
+    <div style="padding: 16px 20px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; font-size: 12px;">
+      <span>чат: <b style="color:var(--blue);">t.me/TheForrestLake</b></span>
+      <span>активны: <b id="forest-active" style="color:var(--green);">—</b></span>
+      <span>вступили: <b id="forest-joined" style="color:var(--green);">—</b></span>
+      <span>фиш сегодня: <b id="forest-today" style="color:var(--green);">—</b></span>
+      <span>фиш всего: <b id="forest-total" style="color:var(--green);">—</b></span>
+      <span>сети: <b id="forest-nets" style="color:var(--blue);">—</b></span>
+    </div>
+  </div>
+
+  <!-- PROXIES -->
+  <div class="card" style="margin-bottom: 20px;" id="proxies-card">
+    <div class="card-header">
+      <div class="card-title">MTProto прокси</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="autoAssignProxies()">⚡ Авто-распределить</button>
+        <button class="btn btn-ghost btn-sm" onclick="fetchProxies()">📡 Загрузить с @mtp4tg</button>
+        <button class="btn btn-ghost btn-sm" onclick="reviveAllProxies()" title="Сделать все прокси активными">↺ Оживить все</button>
+      </div>
+    </div>
+    <div id="proxies-list" style="padding:8px;">
+      <div style="padding:12px 12px 4px;font-size:11px;color:var(--text-dim);">Загрузка...</div>
+    </div>
+  </div>
+
+  <!-- GLOBAL SETTINGS -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+      <div class="card-title">Глобальные настройки</div>
+    </div>
+    <div style="padding: 16px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+      <label style="margin: 0; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); white-space: nowrap;">Локация удочки</label>
+      <select id="g-fishing-location" style="width: auto; min-width: 260px;" onchange="updateFishingLocation()">
+        <option value="Городской пруд">🏙️ Городской пруд</option>
+        <option value="Река">🌊 Река</option>
+        <option value="Озеро">💧 Озеро</option>
+        <option value="Море">🌊 Море</option>
+        <option value="auto">🔄 Авто (смена каждые 30 забросов)</option>
+      </select>
+      <span id="g-location-status" style="font-size: 11px; color: var(--text-dim);"></span>
+    </div>
+    <div style="padding: 0 20px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--border); margin-top: 4px; padding-top: 14px;">
+      <label class="toggle" style="margin:0;">
+        <input type="checkbox" id="g-skip-sell" onchange="updateSkipSell()">
+        <span class="toggle-slider"></span>
+      </label>
+      <div>
+        <span style="font-size:13px;color:var(--text);">Пропускать продажу рыбы при покупке сети</span>
+        <span style="display:block;font-size:10px;color:var(--text-dim);margin-top:2px;">Выкл — рыба продаётся перед покупкой · Вкл — пропускается (риск: не хватит монет → обычная сеть)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-grid" style="grid-template-columns:1fr;">
+    <div>
+      <!-- ACCOUNTS -->
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <div class="card-title">Аккаунты</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm" onclick="setAllAccounts(false)">Выключить всех</button>
+            <button class="btn btn-ghost btn-sm" onclick="setAllAccounts(true)">Включить всех</button>
+            <button class="btn btn-ghost btn-sm" id="cleanup-all-profile-media-btn" onclick="cleanupAllProfileMedia()">Очистить медиа профилей</button>
+            <button class="btn btn-primary" onclick="openWizard()">+ Добавить аккаунты</button>
+          </div>
+        </div>
+        <div class="accounts-list" id="accounts-list">
+          <div class="empty-state">
+            <div class="empty-icon">🐟</div>
+            <div class="empty-text">Загрузка...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT WORK -->
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <div class="card-title">Работа чатов</div>
+          <button class="btn btn-ghost btn-sm" onclick="distributeChats()">Распределить аккаунты по чатам</button>
+        </div>
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border);">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Название</label>
+              <input type="text" id="chat-title" placeholder="beast place">
+            </div>
+            <div class="form-group">
+              <label>Ссылка</label>
+              <input type="text" id="chat-link" placeholder="https://t.me/beast_place">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Лимит аккаунтов</label>
+              <input type="number" id="chat-limit" min="1" value="1">
+            </div>
+            <div class="form-group">
+              <label>Интервал входа, мин</label>
+              <input type="number" id="chat-interval" min="1" value="10">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="createChat()">Добавить чат</button>
+        </div>
+        <div id="chats-list" style="padding:8px;">
+          <div style="padding:12px;font-size:11px;color:var(--text-dim);">Загрузка...</div>
+        </div>
+      </div>
+
+      <!-- LOGS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Лог событий</div>
+          <button class="btn btn-ghost btn-sm" onclick="loadLogs()">↻ обновить</button>
+        </div>
+        <div class="logs-container" id="logs-container">
+          <div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px;">загрузка...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- MODAL: ADD ACCOUNT -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">➕ Добавить аккаунт</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+
+      <div class="form-group">
+        <label>Название (для себя)</label>
+        <input type="text" id="f-name" placeholder="Мой аккаунт">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Username (userid)</label>
+          <input type="text" id="f-tg-name" placeholder="username без @">
+        </div>
+        <div class="form-group">
+          <label>Имя</label>
+          <input type="text" id="f-first-name" placeholder="Имя">
+        </div>
+        <div class="form-group">
+          <label>Фамилия</label>
+          <input type="text" id="f-last-name" placeholder="Фамилия">
+        </div>
+      </div>
+
+      <div class="form-group" id="session-file-group">
+        <label>Файл сессии (.session)</label>
+        <div class="file-drop" id="file-drop" ondragover="fileDrag(event,true)" ondragleave="fileDrag(event,false)" ondrop="fileDrop(event)">
+          <input type="file" id="f-session-file" accept=".session" onchange="fileSelected(this)">
+          <div class="file-drop-icon">📁</div>
+          <div class="file-drop-text">Перетащи .session файл сюда или нажми</div>
+          <div class="file-drop-name" id="file-name"></div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" id="f-chat-text-group">
+          <label>Чат / группа</label>
+          <input type="text" id="f-chat" placeholder="@username или -100123...">
+        </div>
+        <div class="form-group" id="f-chat-select-group" style="display:none;">
+          <label>Чат</label>
+          <select id="f-chat-id">
+            <option value="0">Нигде</option>
+          </select>
+        </div>
+        <div class="form-group" id="f-secondary-chat-select-group" style="display:none;">
+          <label>Второстепенный чат</label>
+          <select id="f-secondary-chat-id">
+            <option value="0">Авто / нет</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Сообщение</label>
+          <input type="text" id="f-message" value="фиш">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Базовый интервал: <span id="lbl-interval">10</span> мин</label>
+        <span class="label-hint">Минимум 10 минут — меньше не будет</span>
+        <div class="range-wrapper">
+          <input type="range" id="f-interval" min="10" max="120" value="10">
+          <div class="range-val"><span id="lbl-interval2">10</span>м</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Разброс (jitter): ±<span id="lbl-jitter">2</span> мин</label>
+        <span class="label-hint">Интервал будет варьироваться в пределах ± этого значения</span>
+        <div class="range-wrapper">
+          <input type="range" id="f-jitter" min="0" max="30" value="2">
+          <div class="range-val">±<span id="lbl-jitter2">2</span>м</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Ночная пауза (не пишет в это время)</label>
+        <span class="label-hint">Оставь оба поля 00:00 — чтобы не было паузы</span>
+        <div class="form-row">
+          <div>
+            <label style="font-size:10px;">Замолчать в</label>
+            <input type="time" id="f-sleep-start" value="23:30">
+          </div>
+          <div>
+            <label style="font-size:10px;">Проснуться в</label>
+            <input type="time" id="f-sleep-end" value="09:00">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="toggle-group">
+          <label class="toggle">
+            <input type="checkbox" id="f-enabled" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          <span style="font-size:13px;color:var(--text);">Включён сразу после добавления</span>
+        </div>
+      </div>
+
+      <div class="form-group" id="problem-notify-group" style="display:none;">
+        <div class="toggle-group">
+          <label class="toggle">
+            <input type="checkbox" id="f-suppress-problem-notifications">
+            <span class="toggle-slider"></span>
+          </label>
+          <span style="font-size:13px;color:var(--text);">Не отправлять тревожные сообщения мне о ЛС</span>
+        </div>
+      </div>
+
+      <div class="form-group" id="profile-photo-actions-group" style="display:none;">
+        <button type="button" class="btn btn-ghost" onclick="cleanupProfilePhotos()">Оставить только текущую аватарку</button>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" id="modal-submit" onclick="submitAccount()">Добавить аккаунт</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: BULK UPLOAD -->
+<div class="modal-overlay" id="bulk-modal-overlay" onclick="closeBulkModal(event)">
+  <div class="modal" id="bulk-modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div class="modal-title">📦 Массовая загрузка аккаунтов</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeBulkModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Файлы сессий (.session)</label>
+        <span class="label-hint">Выбери сколько угодно .session файлов — каждый станет отдельным аккаунтом</span>
+        <div class="file-drop" id="bulk-file-drop"
+             ondragover="bulkFileDrag(event,true)" ondragleave="bulkFileDrag(event,false)" ondrop="bulkFileDrop(event)">
+          <input type="file" id="bulk-session-files" accept=".session" multiple onchange="bulkFileSelected(this)">
+          <div class="file-drop-icon">📁</div>
+          <div class="file-drop-text">Перетащи .session файлы сюда или нажми</div>
+          <div class="file-drop-name" id="bulk-file-names"></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Чат / группа <span style="color:var(--red)">*</span></label>
+        <input type="text" id="bulk-chat" placeholder="@username или -100123...">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Сообщение</label>
+          <input type="text" id="bulk-message" value="фиш">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Интервал: <span id="bulk-lbl-interval">10</span> мин</label>
+        <div class="range-wrapper">
+          <input type="range" id="bulk-interval" min="10" max="120" value="10"
+                 oninput="document.getElementById('bulk-lbl-interval').textContent=this.value">
+          <div class="range-val"><span id="bulk-lbl-interval2">10</span>м</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Разброс: ±<span id="bulk-lbl-jitter">2</span> мин</label>
+        <div class="range-wrapper">
+          <input type="range" id="bulk-jitter" min="0" max="30" value="2"
+                 oninput="document.getElementById('bulk-lbl-jitter').textContent=this.value">
+          <div class="range-val">±<span id="bulk-lbl-jitter2">2</span>м</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Ночная пауза</label>
+        <div class="form-row">
+          <div>
+            <label style="font-size:10px;">Замолчать в</label>
+            <input type="time" id="bulk-sleep-start" value="23:30">
+          </div>
+          <div>
+            <label style="font-size:10px;">Проснуться в</label>
+            <input type="time" id="bulk-sleep-end" value="09:00">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="toggle-group">
+          <label class="toggle">
+            <input type="checkbox" id="bulk-enabled" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          <span style="font-size:13px;color:var(--text);">Включить сразу</span>
+        </div>
+      </div>
+
+      <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">
+        Имя аккаунта = Telegram-имя из сессии
+      </div>
+
+      <div id="bulk-results" style="margin-top:16px;display:none;">
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Результат</div>
+        <div id="bulk-results-list" style="font-size:11px;line-height:1.8;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeBulkModal()">Закрыть</button>
+      <button class="btn btn-primary" id="bulk-submit" onclick="submitBulk()">Загрузить</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NEW ACCOUNT WIZARD -->
+<div class="modal-overlay" id="wizard-modal-overlay" onclick="closeWizard(event)">
+  <div class="modal" id="wizard-modal" style="max-width:720px;">
+    <div class="modal-header">
+      <div class="modal-title">Добавить аккаунты</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeWizard()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="wizard-step-config">
+        <div class="form-group">
+          <label>Файлы сессий (.session)</label>
+          <span class="label-hint">Выбери один или несколько .session файлов. Session string больше не используется.</span>
+          <div class="file-drop" id="wizard-file-drop">
+            <input type="file" id="wizard-files" accept=".session" multiple onchange="wizardFilesSelected(this)">
+            <div class="file-drop-icon">📁</div>
+            <div class="file-drop-text">Перетащи .session файлы сюда или нажми</div>
+            <div class="file-drop-name" id="wizard-file-names"></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Сообщение / цикл</label>
+            <input type="text" id="wizard-message" value="фиш">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Интервал, мин</label>
+            <input type="number" id="wizard-interval" min="10" value="10">
+          </div>
+          <div class="form-group">
+            <label>Jitter, мин</label>
+            <input type="number" id="wizard-jitter" min="0" value="2">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ночная пауза с</label>
+            <input type="time" id="wizard-sleep-start" value="23:30">
+          </div>
+          <div class="form-group">
+            <label>Ночная пауза до</label>
+            <input type="time" id="wizard-sleep-end" value="09:00">
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="toggle-group">
+            <label class="toggle">
+              <input type="checkbox" id="wizard-enabled" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <span style="font-size:13px;color:var(--text);">Включить после вступления в чат</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="toggle-group">
+            <label class="toggle">
+              <input type="checkbox" id="wizard-auto-queue-chat" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <span style="font-size:13px;color:var(--text);">Сразу искать чат</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+          <div id="wizard-asset-stats" style="font-size:11px;color:var(--text-dim);"></div>
+          <button class="btn btn-ghost btn-sm" onclick="resetProfileAssets()">сброс фото/bio</button>
+        </div>
+      </div>
+
+      <div id="wizard-step-account" style="display:none;">
+        <div style="height:8px;background:var(--bg);border:1px solid var(--border2);border-radius:99px;overflow:hidden;margin-bottom:12px;">
+          <div id="wizard-progress" style="height:100%;width:0;background:var(--green);"></div>
+        </div>
+        <div id="wizard-current" style="font-size:11px;color:var(--text-dim);margin-bottom:12px;"></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px;">
+          <img id="wizard-photo" alt="" style="width:128px;height:128px;object-fit:cover;border:1px solid var(--border2);border-radius:8px;background:var(--bg);">
+          <div style="flex:1;min-width:260px;">
+            <div class="form-group">
+              <label>Bio</label>
+              <textarea id="wizard-bio"></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Дата рождения</label>
+                <input type="text" id="wizard-birthday" readonly>
+              </div>
+              <div class="form-group">
+                <label>Бот</label>
+                <input type="text" value="@MDfish_bot" readonly>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>userid</label>
+            <input type="text" id="wizard-userid" placeholder="username без @">
+          </div>
+          <div class="form-group">
+            <label>Имя</label>
+            <input type="text" id="wizard-first-name">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Фамилия (необязательно)</label>
+          <input type="text" id="wizard-last-name">
+        </div>
+        <div id="wizard-error" style="font-size:11px;color:var(--red);"></div>
+      </div>
+
+      <div id="wizard-step-summary" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeWizard()">Отмена</button>
+      <button class="btn btn-ghost" id="wizard-skip" onclick="skipWizardAccount()" style="display:none;">пропустить</button>
+      <button class="btn btn-primary" id="wizard-submit" onclick="wizardNext()">Далее</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- File upload ---
+let sessionFileData = null; // base64 content of .session file
+
+function fileDrag(e, over) {
+  e.preventDefault();
+  document.getElementById('file-drop').classList.toggle('drag', over);
+}
+
+function fileDrop(e) {
+  e.preventDefault();
+  document.getElementById('file-drop').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) loadSessionFile(file);
+}
+
+function fileSelected(input) {
+  if (input.files[0]) loadSessionFile(input.files[0]);
+}
+
+function loadSessionFile(file) {
+  if (!file.name.endsWith('.session')) {
+    toast('⚠️ Нужен файл с расширением .session', 'error');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    sessionFileData = e.target.result; // ArrayBuffer
+    document.getElementById('file-name').textContent = '✓ ' + file.name;
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function resetFileUpload() {
+  sessionFileData = null;
+  document.getElementById('file-name').textContent = '';
+  document.getElementById('f-session-file').value = '';
+}
+
+// --- Toast ---
+function toast(msg, type = 'info', duration = 3500) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  t.onclick = () => t.remove();
+  c.appendChild(t);
+  if (duration > 0) setTimeout(() => { if (t.parentNode) t.remove(); }, duration);
+}
+
+// --- Modal ---
+let editMode = false;
+let chatsCache = [];
+
+function fillAccountChatSelect(selectedId) {
+  const sel = document.getElementById('f-chat-id');
+  if (!sel) return;
+  sel.innerHTML = '<option value="0">Нигде</option>' + chatsCache.map(c =>
+    `<option value="${c.id}">${c.title} (${c.link})</option>`
+  ).join('');
+  sel.value = selectedId ? String(selectedId) : '0';
+}
+
+function fillSecondaryChatSelect(primaryId, selectedId) {
+  const sel = document.getElementById('f-secondary-chat-id');
+  if (!sel) return;
+  const primary = primaryId ? Number(primaryId) : 0;
+  sel.innerHTML = '<option value="0">Авто / нет</option>' + chatsCache
+    .filter(c => Number(c.id) !== primary)
+    .map(c => `<option value="${c.id}">${c.title} (${c.link})</option>`)
+    .join('');
+  sel.value = selectedId ? String(selectedId) : '0';
+}
+
+async function loadAccountChatOptions(selectedId, secondaryId) {
+  try {
+    chatsCache = await api('GET', '/api/chats');
+    fillAccountChatSelect(selectedId);
+    fillSecondaryChatSelect(selectedId, secondaryId);
+  } catch (e) {
+    chatsCache = [];
+    fillAccountChatSelect(selectedId);
+    fillSecondaryChatSelect(selectedId, secondaryId);
+  }
+}
+
+function openAddModal() {
+  editMode = false;
+  document.getElementById('modal-title').textContent = '➕ Добавить аккаунт';
+  document.getElementById('modal-submit').textContent = 'Добавить';
+  document.getElementById('edit-id').value = '';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-chat').value = '';
+  document.getElementById('f-chat-text-group').style.display = '';
+  document.getElementById('f-chat-select-group').style.display = 'none';
+  document.getElementById('f-secondary-chat-select-group').style.display = 'none';
+  document.getElementById('f-message').value = 'фиш';
+  document.getElementById('f-interval').value = 10;
+  document.getElementById('lbl-interval').textContent = 10;
+  document.getElementById('lbl-interval2').textContent = 10;
+  document.getElementById('f-jitter').value = 2;
+  document.getElementById('lbl-jitter').textContent = 2;
+  document.getElementById('lbl-jitter2').textContent = 2;
+  document.getElementById('f-sleep-start').value = '23:30';
+  document.getElementById('f-sleep-end').value = '09:00';
+  document.getElementById('f-enabled').checked = true;
+  document.getElementById('f-suppress-problem-notifications').checked = false;
+  document.getElementById('problem-notify-group').style.display = 'none';
+  document.getElementById('profile-photo-actions-group').style.display = 'none';
+  document.getElementById('session-file-group').style.display = '';
+  resetFileUpload();
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function openEditModal(acc) {
+  editMode = true;
+  document.getElementById('modal-title').textContent = '✏️ Редактировать';
+  document.getElementById('modal-submit').textContent = 'Сохранить';
+  document.getElementById('edit-id').value = acc.id;
+  document.getElementById('f-name').value = acc.name;
+  resetFileUpload();
+  document.getElementById('f-chat').value = acc.chat;
+  document.getElementById('f-chat-text-group').style.display = 'none';
+  document.getElementById('f-chat-select-group').style.display = '';
+  document.getElementById('f-secondary-chat-select-group').style.display = '';
+  document.getElementById('f-chat-id').onchange = () => fillSecondaryChatSelect(document.getElementById('f-chat-id').value, document.getElementById('f-secondary-chat-id').value);
+  loadAccountChatOptions(acc.chat_id || 0, acc.secondary_chat_id || 0);
+  document.getElementById('f-message').value = acc.message;
+  document.getElementById('f-tg-name').value = acc.tg_name || '';
+  // split display name into first/last when possible
+  const parts = (acc.name || '').split(' ');
+  document.getElementById('f-first-name').value = parts[0] || '';
+  document.getElementById('f-last-name').value = parts.slice(1).join(' ') || '';
+  const iv = acc.interval_minutes;
+  document.getElementById('f-interval').value = iv;
+  document.getElementById('lbl-interval').textContent = iv;
+  document.getElementById('lbl-interval2').textContent = iv;
+  const jt = acc.jitter_minutes;
+  document.getElementById('f-jitter').value = jt;
+  document.getElementById('lbl-jitter').textContent = jt;
+  document.getElementById('lbl-jitter2').textContent = jt;
+  document.getElementById('f-sleep-start').value = acc.sleep_start || '23:30';
+  document.getElementById('f-sleep-end').value = acc.sleep_end || '09:00';
+  document.getElementById('f-enabled').checked = !!acc.enabled;
+  document.getElementById('f-suppress-problem-notifications').checked = !!acc.suppress_problem_notifications;
+  document.getElementById('problem-notify-group').style.display = '';
+  document.getElementById('profile-photo-actions-group').style.display = '';
+  document.getElementById('session-file-group').style.display = 'none';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('active');
+}
+
+// --- API helpers ---
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ detail: r.statusText }));
+    throw new Error(err.detail || 'API error');
+  }
+  return r.json();
+}
+
+// --- Submit account ---
+async function submitAccount() {
+  const btn = document.getElementById('modal-submit');
+  btn.disabled = true;
+  btn.textContent = '⌛ ...';
+
+  try {
+    if (editMode) {
+      const id = parseInt(document.getElementById('edit-id').value);
+      const updates = {
+        name: document.getElementById('f-name').value,
+        tg_name: document.getElementById('f-tg-name').value || undefined,
+        first_name: document.getElementById('f-first-name').value || undefined,
+        last_name: document.getElementById('f-last-name').value || undefined,
+        chat_id: parseInt(document.getElementById('f-chat-id').value || '0'),
+        secondary_chat_id: parseInt(document.getElementById('f-secondary-chat-id').value || '0'),
+        message: document.getElementById('f-message').value,
+        interval_minutes: parseInt(document.getElementById('f-interval').value),
+        jitter_minutes: parseInt(document.getElementById('f-jitter').value),
+        sleep_start: document.getElementById('f-sleep-start').value,
+        sleep_end: document.getElementById('f-sleep-end').value,
+        enabled: document.getElementById('f-enabled').checked,
+        suppress_problem_notifications: document.getElementById('f-suppress-problem-notifications').checked,
+      };
+      await api('PATCH', `/api/accounts/${id}`, updates);
+      toast('✅ Сохранено', 'success');
+      closeModal();
+      await loadAccounts();
+    } else {
+      if (!sessionFileData) { toast('⚠️ Выбери .session файл', 'error'); return; }
+      const name = document.getElementById('f-name').value.trim();
+      const chat = document.getElementById('f-chat').value.trim();
+      if (!name || !chat) { toast('⚠️ Заполни название и чат', 'error'); return; }
+
+      const fd = new FormData();
+      fd.append('session_file', new Blob([sessionFileData]), 'account.session');
+      fd.append('name', name);
+      fd.append('chat', chat);
+      fd.append('message', document.getElementById('f-message').value);
+      fd.append('interval_minutes', document.getElementById('f-interval').value);
+      fd.append('jitter_minutes', document.getElementById('f-jitter').value);
+      fd.append('sleep_start', document.getElementById('f-sleep-start').value);
+      fd.append('sleep_end', document.getElementById('f-sleep-end').value);
+      fd.append('timezone', 'Europe/Moscow');
+      fd.append('enabled', document.getElementById('f-enabled').checked);
+
+      const r = await fetch('/api/accounts/upload', { method: 'POST', body: fd });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({ detail: r.statusText }));
+        throw new Error(err.detail || 'Ошибка');
+      }
+      const res = await r.json();
+      toast(`✅ Добавлен: ${res.tg_name}`, 'success');
+      closeModal();
+      await loadAccounts();
+    }
+  } catch (e) {
+    toast('❌ ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = editMode ? 'Сохранить' : 'Добавить аккаунт';
+  }
+}
+
+// --- Render accounts ---
+function accountSetupBadge(acc) {
+  const setup = acc.setup_status || 'working';
+  const chat = acc.chat_status || 'joined';
+  if (setup === 'banned' || chat === 'banned') return '<span class="badge badge-stopped">заблокирован</span>';
+  if (setup === 'waiting_chat' || chat === 'waiting') return '<span class="badge" style="color:var(--yellow);border:1px solid rgba(255,193,7,0.35);">ожидает чат</span>';
+  if (setup === 'manual_waiting_chat' || chat === 'manual_waiting') return '<span class="badge" style="color:var(--yellow);border:1px solid rgba(255,193,7,0.35);">чат не ищется</span>';
+  if (chat === 'queued') return '<span class="badge" style="color:var(--yellow);border:1px solid rgba(255,193,7,0.35);">в очереди входа</span>';
+  if (chat === 'joining') return '<span class="badge" style="color:var(--yellow);border:1px solid rgba(255,193,7,0.35);">вступает</span>';
+  if (setup === 'chat_error') return '<span class="badge badge-stopped">ошибка чата</span>';
+  return '';
+}
+
+function renderAccount(acc) {
+  const gMode = window.fishingLocationMode || 'Городской пруд';
+  const dispLoc = gMode === 'auto' ? (acc.current_location || 'Городской пруд') : gMode;
+  const secondaryReady = acc.secondary_chat_available_at ? new Date(acc.secondary_chat_available_at) <= new Date() : true;
+  const forestStatus = acc.forest_chat_status || 'queued';
+  const forestReady = acc.forest_available_at ? new Date(acc.forest_available_at) <= new Date() : false;
+  const forestLabel = !acc.forest_enabled
+    ? 'выкл'
+    : (forestStatus === 'joined' ? (forestReady ? acc.forest_status : 'разогрев') : forestStatus);
+  const secondaryMeta = acc.secondary_chat
+    ? `<span style="color:var(--text-dim);">второстепенный чат: ${acc.secondary_chat_status === 'joined' && secondaryReady ? acc.secondary_chat : (acc.secondary_chat_status === 'joined' ? 'разогрев' : (acc.secondary_chat_status || 'queued'))}</span>`
+    : '';
+  const isBanned = acc.setup_status === 'banned' || acc.chat_status === 'banned';
+  return `
+  <div class="account-item ${isBanned ? '' : (acc.enabled || acc.forest_enabled) ? '' : 'disabled'}" id="acc-${acc.id}" style="${isBanned ? 'border-color:rgba(255,79,79,0.5);background:rgba(255,79,79,0.06);' : ''}">
+    <div class="account-main">
+      <div class="account-name">
+        ${acc.name}
+        ${acc.tg_name ? `<span style="color:var(--text-dim);font-weight:400;font-size:12px;">@${acc.tg_name}</span>` : ''}
+        <span class="badge ${acc.status === 'running' ? 'badge-running' : 'badge-stopped'}">
+          ${acc.status === 'running' ? '● live' : '○ стоп'}
+        </span>
+        ${accountSetupBadge(acc)}
+      </div>
+      <div class="account-meta">
+        <span>⏱ ${acc.interval_minutes}±${acc.jitter_minutes} мин</span>
+        ${acc.sleep_start && acc.sleep_start !== '00:00'
+          ? `<span>😴 ${acc.sleep_start}–${acc.sleep_end}</span>` : ''}
+        ${acc.proxy_id ? `<span style="color:var(--blue);">🌐 proxy#${acc.proxy_id}</span>` : ''}
+        ${acc.chat_error ? `<span style="color:var(--red);">${acc.chat_error}</span>` : ''}
+      </div>
+      <div class="account-meta" style="margin-top:4px;">
+        <span>${fmtTimer(acc.dynamite_last_used, 8*60*60+2*60, '💣')}</span>
+        <span>${fmtNetTimer(acc.net_last_used, acc.net_fast_uses || 0)}</span>
+        ${(acc.net_fast_uses > 0) ? `<span style="color:var(--blue);">🕸️ быстрых: ${acc.net_fast_uses}</span>` : ''}
+        <span style="color:var(--text-dim);">🎣 ${acc.fish_cast_count || 0} забр.</span>
+        <span style="color:var(--blue);">📍 ${dispLoc}</span>
+        ${secondaryMeta}
+      </div>
+      <div class="account-meta" style="margin-top:4px;">
+        <span style="color:var(--blue);">🌲 лес: ${forestLabel}</span>
+        <span>${fmtTimer(acc.forest_net_last_used, 24*3600, '🌲 сеть')}</span>
+        <span style="color:var(--text-dim);">🌲 фиш: ${acc.forest_fish_count || 0}</span>
+        ${acc.forest_chat_error ? `<span style="color:var(--red);">${acc.forest_chat_error}</span>` : ''}
+      </div>
+      ${acc.next_send_at
+        ? `<div class="next-send">→ следующий: ${new Date(acc.next_send_at).toLocaleTimeString('ru')}</div>`
+        : ''}
+    </div>
+    <div class="account-actions">
+      ${(acc.setup_status === 'manual_waiting_chat' || acc.chat_status === 'manual_waiting') ? `<button class="btn btn-primary btn-sm" onclick="findChat(${acc.id})" title="Найти чат и встать в очередь">найти чат</button>` : ''}
+      ${acc.chat_status === 'queued' ? `<button class="btn btn-primary btn-sm" onclick="forceChatJoin(${acc.id})" title="Вступить в чат сейчас">форс</button>` : ''}
+      <button class="btn btn-ghost btn-sm" onclick="sendNow(${acc.id})" title="Отправить фиш сейчас">⚡</button>
+      <button class="btn btn-ghost btn-sm" onclick="initializeAccount(${acc.id})" title="Инициализация">◎</button>
+      <button class="btn btn-ghost btn-sm" onclick="getAccountPhone(${acc.id})" title="Получить номер телефона">☎</button>
+      <button class="btn btn-ghost btn-sm" onclick="sendCustomText(${acc.id}, 'primary')" title="Написать в основной чат">✎</button>
+      ${acc.secondary_chat ? `<button class="btn btn-ghost btn-sm" onclick="sendCustomText(${acc.id}, 'secondary')" title="Написать во второстепенный чат">②</button>` : ''}
+      <button class="btn btn-ghost btn-sm" onclick="solveCaptcha(${acc.id})" title="Решить капчу">🔐</button>
+      <button class="btn btn-ghost btn-sm" onclick="sendTour(${acc.id})" title="/tour — инфо о туре">🗺️</button>
+      <button class="btn btn-ghost btn-sm" onclick="getLastCode(${acc.id})" title="Последний код входа из Telegram">📩</button>
+      <button class="btn btn-ghost btn-sm" onclick="terminateSessions(${acc.id})" title="Завершить все другие сессии">🚪</button>
+      <button class="btn btn-ghost btn-sm" onclick="replaceSession(${acc.id})" title="Заменить .session файл">🔄</button>
+      <button class="btn btn-ghost btn-sm" onclick='openEditModal(${JSON.stringify(acc).replace(/'/g, "&#39;")})' title="Настройки">⚙</button>
+      <button class="btn btn-ghost btn-sm" onclick="toggleForest(${acc.id})" title="${acc.forest_enabled ? 'Выключить TheForrestLake' : 'Включить TheForrestLake'}">🌲</button>
+      <button class="btn btn-ghost btn-sm" onclick="toggleAccount(${acc.id})" title="${acc.enabled ? 'Выключить' : 'Включить'}">
+        ${acc.enabled ? '⏸' : '▶'}
+      </button>
+      <button class="btn btn-danger btn-sm" onclick="deleteAccount(${acc.id})" title="Удалить">✕</button>
+    </div>
+  </div>`;
+}
+
+async function loadAccounts() {
+  const list = document.getElementById('accounts-list');
+  try {
+    const accounts = await api('GET', '/api/accounts');
+    if (!accounts.length) {
+      list.innerHTML = `<div class="empty-state"><div class="empty-icon">🐟</div><div class="empty-text">Нет аккаунтов. Добавь первый!</div></div>`;
+      return;
+    }
+
+    // Group by chat
+    const groups = {};
+    for (const acc of accounts) {
+      const key = acc.chat || '—';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(acc);
+    }
+
+    let html = '';
+    for (const [chat, accs] of Object.entries(groups)) {
+      const running = accs.filter(a => a.status === 'running').length;
+      html += `<div class="chat-group">
+        <div class="chat-group-header">
+          <span>Чат</span>
+          <span class="chat-label">💬 ${chat}</span>
+          <span class="chat-count">${accs.length} акк.</span>
+          <span class="chat-count" style="color:var(--green);border-color:rgba(0,230,118,0.3);">● ${running} live</span>
+        </div>
+        ${accs.map(renderAccount).join('')}
+      </div>`;
+    }
+    list.innerHTML = html;
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-text" style="color:var(--red)">Ошибка: ${e.message}</div></div>`;
+  }
+}
+
+async function toggleAccount(id) {
+  try {
+    const r = await api('POST', `/api/accounts/${id}/toggle`);
+    toast(r.enabled ? '▶ Запущен' : '⏸ Остановлен', 'info');
+    await loadAccounts();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function toggleForest(id) {
+  try {
+    const r = await api('POST', `/api/accounts/${id}/forest-toggle`);
+    toast(r.enabled ? '🌲 TheForrestLake включён' : '🌲 TheForrestLake выключен', 'info');
+    await Promise.all([loadAccounts(), loadStats()]);
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function setAllAccounts(enabled) {
+  try {
+    const r = await api('POST', '/api/accounts/toggle-all', { enabled });
+    toast(enabled ? `▶ Включено: ${r.changed}` : `⏸ Выключено: ${r.changed}`, 'info');
+    await loadAccounts();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function setAllForest(enabled) {
+  try {
+    const r = await api('POST', '/api/forest/toggle-all', { enabled });
+    toast(enabled ? `🌲 Лес включён: ${r.changed}` : `🌲 Лес выключен: ${r.changed}`, 'info');
+    await Promise.all([loadAccounts(), loadStats()]);
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function setChatAccounts(chatId, enabled) {
+  try {
+    const r = await api('POST', `/api/chats/${chatId}/toggle-accounts`, { enabled });
+    toast(enabled ? `▶ Чат включён: ${r.changed}` : `⏸ Чат выключен: ${r.changed}`, 'info');
+    await loadAccounts();
+    await loadChats();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function deleteAccount(id) {
+  if (!confirm('Удалить аккаунт?')) return;
+  try {
+    await api('DELETE', `/api/accounts/${id}`);
+    toast('🗑 Удалён', 'info');
+    await loadAccounts();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function forceChatJoin(id) {
+  try {
+    toast('Выполняю вход в чат...', 'info');
+    await api('POST', `/api/accounts/${id}/force_chat_join`);
+    toast('✓ Вход выполнен', 'success');
+    await Promise.all([loadAccounts(), loadChats(), loadLogs()]);
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function findChat(id) {
+  try {
+    const r = await api('POST', `/api/accounts/${id}/find_chat`);
+    toast(`✓ Поиск чата запущен${r.assigned ? `, назначено: ${r.assigned}` : ''}`, 'success');
+    await Promise.all([loadAccounts(), loadChats(), loadLogs()]);
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function solveCaptcha(id) {
+  try {
+    toast('🔐 Ищу капчу в ЛС и решаю...', 'info');
+    const r = await api('POST', `/api/accounts/${id}/solve_captcha`);
+    if (r.ok) toast(`✅ Капча решена: "${r.answer}"`, 'success');
+    else toast('❌ ' + (r.error || 'Ошибка'), 'error');
+    await loadLogs();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function sendNow(id) {
+  try {
+    toast('⌛ Отправляю...', 'info');
+    const r = await api('POST', `/api/accounts/${id}/send_now`);
+    if (r.ok) toast(`✅ Отправлено: "${r.message}"`, 'success');
+    else toast('❌ ' + r.error, 'error');
+    await loadLogs();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function getAccountPhone(id) {
+  try {
+    const r = await api('GET', `/api/accounts/${id}/phone`);
+    alert(r.phone ? `Телефон: +${r.phone}` : 'Телефон не найден');
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function initializeAccount(id) {
+  try {
+    toast('Инициализация аккаунта...', 'info');
+    await api('POST', `/api/accounts/${id}/initialize`);
+    toast('✓ Инициализация выполнена', 'success');
+    await loadLogs();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function sendCustomText(id, target = 'primary') {
+  const promptLabel = target === 'secondary' ? 'второстепенный чат аккаунта' : 'основной чат аккаунта';
+  const text = prompt(`Текст для отправки в ${promptLabel}`);
+  if (text === null) return;
+  const trimmed = text.trim();
+  if (!trimmed) { toast('⚠️ Пустой текст', 'error'); return; }
+  try {
+    const r = await api('POST', `/api/accounts/${id}/send_text`, { text: trimmed, target });
+    toast(`✓ Отправлено: "${r.message}"`, 'success');
+    await loadLogs();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function sendTour(id) {
+  try {
+    toast('🗺️ Отправляю /tour...', 'info');
+    const r = await api('POST', `/api/accounts/${id}/tour`);
+    if (r.ok) toast(`🗺️ /tour:\n${r.text}`, 'success', 0);
+    else toast('❌ ' + (r.error || 'Ошибка'), 'error');
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function terminateSessions(id) {
+  if (!confirm('Завершить все сессии Telegram кроме текущей (хранящейся в боте)?\nЭто выбьет все другие устройства и приложения из этого аккаунта.')) return;
+  try {
+    toast('⌛ Завершаю сессии...', 'info');
+    const r = await api('POST', `/api/accounts/${id}/terminate_sessions`);
+    if (r.ok) toast(`🚪 Завершено сессий: ${r.terminated}`, 'success');
+    else toast('❌ Ошибка', 'error');
+    await loadLogs();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function cleanupProfilePhotos() {
+  const id = parseInt(document.getElementById('edit-id').value);
+  if (!id) return;
+  if (!confirm('Удалить все старые аватарки и оставить только текущую?')) return;
+  try {
+    toast('⌛ Удаляю старые аватарки...', 'info');
+    const r = await api('POST', `/api/accounts/${id}/cleanup_profile_photos`);
+    if (r.kept_current) {
+      toast(`✓ Готово: удалено ${r.deleted}, осталось ${r.remaining}`, 'success');
+    } else {
+      toast('⚠️ На аккаунте нет текущей аватарки', 'error');
+    }
+    await loadLogs();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function cleanupAllProfileMedia() {
+  if (!confirm('Для всех аккаунтов по очереди удалить все старые аватарки, оставив текущую, и удалить все публикации/истории профиля?')) return;
+  const btn = document.getElementById('cleanup-all-profile-media-btn');
+  const oldText = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Очистка...';
+  }
+  try {
+    toast('⌛ Запущена последовательная очистка всех аккаунтов...', 'info', 0);
+    const r = await api('POST', '/api/accounts/cleanup_profile_media_all');
+    let msg = `Готово: аккаунтов ${r.succeeded}/${r.accounts}, фото удалено ${r.photos_deleted}, историй/публикаций удалено ${r.stories_deleted}`;
+    if (r.story_warnings) msg += `, предупреждений ${r.story_warnings}`;
+    if (r.failed) msg += `, ошибок ${r.failed}`;
+    toast(msg, r.failed ? 'error' : 'success', 0);
+    await Promise.all([loadLogs(), loadAccounts()]);
+  } catch (e) {
+    toast('❌ ' + e.message, 'error', 0);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = oldText || 'Очистить медиа профилей';
+    }
+  }
+}
+
+async function replaceSession(id) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.session';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    if (!file.name.endsWith('.session')) { toast('⚠️ Нужен .session файл', 'error'); return; }
+    const fd = new FormData();
+    fd.append('session_file', file);
+    try {
+      toast('⌛ Заменяю сессию...', 'info');
+      const r = await fetch(`/api/accounts/${id}/replace_session`, {
+        method: 'POST',
+        body: fd,
+      });
+      const data = await r.json();
+      if (!r.ok) { toast('❌ ' + (data.detail || 'Ошибка'), 'error'); return; }
+      toast(`🔄 Сессия заменена: @${data.tg_name || '?'}`, 'success');
+      await loadAccounts();
+    } catch (e) { toast('❌ ' + e.message, 'error'); }
+  };
+  input.click();
+}
+
+async function getLastCode(id) {
+  try {
+    toast('📩 Ищу код в сообщениях Telegram...', 'info');
+    const r = await api('GET', `/api/accounts/${id}/last_code`);
+    if (r.ok) {
+      const msg = `Код: ${r.code}\n\n${r.text}`;
+      toast(`📩 Код: ${r.code}`, 'success');
+      alert(msg);
+    } else {
+      toast('❌ ' + r.error, 'error');
+    }
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+// --- Timer helpers ---
+function fmtTimer(lastUsedIso, intervalSec, label) {
+  if (!lastUsedIso) return `${label}: <span style="color:var(--green)">готово</span>`;
+  const ms = new Date(lastUsedIso).getTime();
+  if (isNaN(ms)) return `${label}: <span style="color:var(--green)">готово</span>`;
+  const remaining = intervalSec - (Date.now() - ms) / 1000;
+  if (remaining <= 0) return `${label}: <span style="color:var(--green)">готово</span>`;
+  const h = Math.floor(remaining / 3600);
+  const m = Math.floor((remaining % 3600) / 60);
+  return `${label}: <span style="color:var(--yellow)">${h}ч ${m}м</span>`;
+}
+
+function fmtNetTimer(lastUsedIso, fastUses) {
+  const intervalSec = fastUses > 0 ? 12 * 3600 : 24 * 3600;
+  return fmtTimer(lastUsedIso, intervalSec, '🕸️');
+}
+
+// --- Settings ---
+// Current fishing location mode; used when rendering account rows
+window.fishingLocationMode = 'Городской пруд';
+
+async function loadSettings() {
+  try {
+    const s = await api('GET', '/api/settings');
+    window.fishingLocationMode = s.fishing_location_mode || 'Городской пруд';
+    const sel = document.getElementById('g-fishing-location');
+    if (sel) sel.value = window.fishingLocationMode;
+    const tog = document.getElementById('g-skip-sell');
+    if (tog) tog.checked = !!s.skip_sell_fish;
+  } catch (e) { console.error('settings load error:', e); }
+}
+
+async function updateFishingLocation() {
+  const mode = document.getElementById('g-fishing-location').value;
+  const status = document.getElementById('g-location-status');
+  try {
+    await api('POST', '/api/settings', { fishing_location_mode: mode });
+    window.fishingLocationMode = mode;
+    if (status) {
+      const hint = mode === 'auto' ? '' : ' — меняю локацию для всех аккаунтов...';
+      status.textContent = '✓ сохранено' + hint;
+      setTimeout(() => { status.textContent = ''; }, 3000);
+    }
+    toast('✅ Локация обновлена' + (mode !== 'auto' ? ' (смена в очереди)' : ''), 'success');
+    await loadAccounts();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function updateSkipSell() {
+  const val = document.getElementById('g-skip-sell').checked;
+  try {
+    await api('POST', '/api/settings', { skip_sell_fish: val });
+    toast(val ? '✅ Продажа рыбы отключена' : '✅ Продажа рыбы включена', 'success');
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+// --- Logs ---
+async function loadLogs() {
+  const c = document.getElementById('logs-container');
+  try {
+    const { logs } = await api('GET', '/api/logs?limit=80');
+    if (!logs.length) {
+      c.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px;">Пока нет событий</div>';
+      return;
+    }
+    c.innerHTML = logs.map(l => {
+      const time = new Date(l.created_at + 'Z').toLocaleTimeString('ru', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      return `<div class="log-entry">
+        <span class="log-time">${time}</span>
+        <span class="log-account">${l.account_name || '?'}</span>
+        <span class="log-event ${l.event}">${l.event}</span>
+        <span class="log-details" title="${l.details || ''}">${l.details || ''}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    c.innerHTML = `<div style="padding:12px;color:var(--red);font-size:11px;">Ошибка: ${e.message}</div>`;
+  }
+}
+
+// --- Stats ---
+async function loadStats() {
+  try {
+    const s = await api('GET', '/api/stats');
+    document.getElementById('stat-total').textContent = s.total_accounts;
+    document.getElementById('stat-active').textContent = s.active_accounts;
+    document.getElementById('stat-today').textContent = s.sent_today;
+    document.getElementById('stat-total-sent').textContent = s.total_sent;
+    const forest = s.forest || {};
+    document.getElementById('forest-active').textContent = forest.active_accounts ?? '—';
+    document.getElementById('forest-joined').textContent = forest.joined_accounts ?? '—';
+    document.getElementById('forest-today').textContent = forest.fish_today ?? '—';
+    document.getElementById('forest-total').textContent = forest.fish_total ?? '—';
+    document.getElementById('forest-nets').textContent = forest.net_total ?? '—';
+    document.getElementById('status-text').textContent =
+      `${s.active_accounts} воркер${s.active_accounts === 1 ? '' : 'а'} активн${s.active_accounts === 1 ? '' : 'о'}`;
+  } catch (e) {
+    document.getElementById('status-text').textContent = 'ошибка соединения';
+  }
+}
+
+// --- Proxies ---
+async function loadProxies() {
+  const el = document.getElementById('proxies-list');
+  try {
+    const proxies = await api('GET', '/api/proxies');
+    if (!proxies.length) {
+      el.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-dim);">Нет прокси — нажми "Загрузить с @mtp4tg"</div>';
+      return;
+    }
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead><tr style="color:var(--text-dim);text-align:left;">
+        <th style="padding:6px 8px;">Сервер</th>
+        <th style="padding:6px 8px;">Порт</th>
+        <th style="padding:6px 8px;">Статус</th>
+        <th style="padding:6px 8px;">Падений</th>
+        <th style="padding:6px 8px;">Аккаунты</th>
+        <th style="padding:6px 8px;"></th>
+      </tr></thead>
+      <tbody>
+        ${proxies.map(p => `
+          <tr style="border-top:1px solid var(--border);">
+            <td style="padding:6px 8px;color:var(--text-bright);font-family:var(--mono);">${p.server}</td>
+            <td style="padding:6px 8px;">${p.port}</td>
+            <td style="padding:6px 8px;">
+              <span style="color:${p.status==='active'?'var(--green)':'var(--red)'};">
+                ${p.status==='active'?'● активен':'✕ мёртвый'}
+              </span>
+            </td>
+            <td style="padding:6px 8px;color:${p.fail_count>0?'var(--yellow)':'var(--text-dim)'};">${p.fail_count}</td>
+            <td style="padding:6px 8px;">${p.account_count || 0}</td>
+            <td style="padding:6px 8px;display:flex;gap:4px;">
+              <button class="btn btn-ghost btn-sm" onclick="testProxy(${p.id})" title="Проверить работоспособность">🔍</button>
+              ${p.status==='dead'
+                ? `<button class="btn btn-ghost btn-sm" onclick="reviveProxy(${p.id})">↺</button>`
+                : `<button class="btn btn-ghost btn-sm" onclick="markProxyDead(${p.id})" title="Пометить мёртвым">✕</button>`}
+              <button class="btn btn-danger btn-sm" onclick="deleteProxy(${p.id})" title="Удалить">🗑</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+  } catch (e) {
+    el.innerHTML = `<div style="padding:12px;color:var(--red);font-size:11px;">Ошибка: ${e.message}</div>`;
+  }
+}
+
+async function fetchProxies() {
+  try {
+    toast('📡 Подключаюсь к @mtp4tg...', 'info');
+    const r = await api('POST', '/api/proxies/fetch');
+    toast(`✅ Добавлено: ${r.added}, дублей: ${r.skipped}${r.error?' ⚠️ '+r.error:''}`, r.error?'error':'success');
+    await loadProxies();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function markProxyDead(id) {
+  if (!confirm('Пометить прокси как мёртвый и переназначить аккаунты?')) return;
+  try {
+    const r = await api('POST', `/api/proxies/${id}/mark-dead`);
+    toast(`✓ Мёртвый, переназначено аккаунтов: ${r.reassigned}`, 'info');
+    await Promise.all([loadProxies(), loadAccounts()]);
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function reviveProxy(id) {
+  try {
+    await api('POST', `/api/proxies/${id}/revive`);
+    toast('↺ Прокси активирован', 'success');
+    await loadProxies();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function testProxy(id) {
+  try {
+    toast(`🔍 Проверка прокси ${id}...`, 'info');
+    const r = await api('POST', `/api/proxies/${id}/test`);
+    toast(`✅ Прокси работает! ${r.user}`, 'success');
+    await loadProxies();
+  } catch (e) { 
+    toast(`❌ Прокси неработающий: ${e.message}`, 'error');
+    await loadProxies();
+  }
+}
+
+async function reviveAllProxies() {
+  if (!confirm('Сделать все прокси активными?')) return;
+  try {
+    toast(`↺ Оживляю все прокси...`, 'info');
+    const r = await api('POST', `/api/proxies/revive-all`);
+    toast(`✅ Активировано: ${r.revived} из ${r.total}`, 'success');
+    await loadProxies();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function deleteProxy(id) {
+  if (!confirm('Удалить прокси? Аккаунты останутся без прокси.')) return;
+  try {
+    await api('DELETE', `/api/proxies/${id}`);
+    toast('🗑 Удалён', 'info');
+    await loadProxies();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function autoAssignProxies() {
+  try {
+    const r = await api('POST', '/api/proxies/auto-assign');
+    toast(`✅ Назначено: ${r.assigned}, без прокси: ${r.no_proxy_available}`, 'success');
+    await Promise.all([loadProxies(), loadAccounts()]);
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+// --- Chats ---
+async function loadChats() {
+  const el = document.getElementById('chats-list');
+  if (!el) return;
+  try {
+    const chats = await api('GET', '/api/chats');
+    chatsCache = chats;
+    if (!chats.length) {
+      el.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-dim);">Чаты не созданы. Готовые аккаунты будут ждать.</div>';
+      return;
+    }
+    el.innerHTML = chats.map(c => {
+      const occupied = c.occupied || 0;
+      const free = Math.max(0, c.account_limit - occupied);
+      return `<div class="account-item">
+        <div class="account-main">
+          <div class="account-name">
+            <input type="text" id="chat-title-${c.id}" value="${c.title || ''}" style="max-width:160px;">
+            <span class="badge ${free > 0 ? 'badge-running' : 'badge-stopped'}">${occupied}/${c.account_limit}</span>
+          </div>
+          <div class="account-meta">
+            <input type="text" id="chat-link-${c.id}" value="${c.link || ''}" style="max-width:220px;">
+            <span>лимит: <input type="number" id="chat-limit-${c.id}" min="1" value="${c.account_limit}" style="width:70px;"></span>
+            <span>интервал: <input type="number" id="chat-interval-${c.id}" min="1" value="${c.join_interval_minutes}" style="width:70px;"> мин</span>
+            <span>очередь: ${c.queued || 0}</span>
+            <span>вступили: ${c.joined || 0}</span>
+            <span>свободно: ${free}</span>
+            <label style="display:inline-flex;align-items:center;gap:6px;">
+              <input type="checkbox" id="chat-avoid-secondary-${c.id}" ${c.avoid_as_secondary ? 'checked' : ''}>
+              не использовать как второстепенный чат
+            </label>
+          </div>
+        </div>
+        <div class="account-actions">
+          <button class="btn btn-ghost btn-sm" onclick="setChatAccounts(${c.id}, false)">выкл</button>
+          <button class="btn btn-ghost btn-sm" onclick="setChatAccounts(${c.id}, true)">вкл</button>
+          <button class="btn btn-ghost btn-sm" onclick="updateChat(${c.id})">сохранить</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteChat(${c.id})">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = `<div style="padding:12px;color:var(--red);font-size:11px;">Ошибка: ${e.message}</div>`;
+  }
+}
+
+async function createChat() {
+  try {
+    const r = await api('POST', '/api/chats', {
+      title: document.getElementById('chat-title').value.trim(),
+      link: document.getElementById('chat-link').value.trim(),
+      account_limit: parseInt(document.getElementById('chat-limit').value || '1'),
+      join_interval_minutes: parseInt(document.getElementById('chat-interval').value || '10'),
+    });
+    toast(`✅ Чат добавлен, назначено аккаунтов: ${r.assigned}`, 'success');
+    document.getElementById('chat-title').value = '';
+    document.getElementById('chat-link').value = '';
+    await Promise.all([loadChats(), loadAccounts()]);
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function deleteChat(id) {
+  if (!confirm('Удалить чат? Назначенные аккаунты вернутся в ожидание.')) return;
+  try {
+    await api('DELETE', `/api/chats/${id}`);
+    await Promise.all([loadChats(), loadAccounts()]);
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function updateChat(id) {
+  try {
+    const r = await api('PATCH', `/api/chats/${id}`, {
+      title: document.getElementById(`chat-title-${id}`).value.trim(),
+      link: document.getElementById(`chat-link-${id}`).value.trim(),
+      account_limit: parseInt(document.getElementById(`chat-limit-${id}`).value || '1'),
+      join_interval_minutes: parseInt(document.getElementById(`chat-interval-${id}`).value || '10'),
+      avoid_as_secondary: document.getElementById(`chat-avoid-secondary-${id}`).checked,
+    });
+    const secondaryInfo = r.secondary_cleared ? `, второстепенных переназначено: ${r.secondary_assigned || 0}` : '';
+    toast(`✓ Чат сохранен${r.moved ? `, выведено лишних: ${r.moved}` : ''}${secondaryInfo}`, 'success');
+    await Promise.all([loadChats(), loadAccounts(), loadLogs()]);
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function distributeChats() {
+  try {
+    const r = await api('POST', '/api/chats/distribute');
+    toast(`✅ Назначено: ${r.assigned}`, 'success');
+    await Promise.all([loadChats(), loadAccounts()]);
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+// --- New account wizard ---
+let wizardFiles = [];
+let wizardBatch = null;
+let wizardIndex = 0;
+let wizardAdded = 0;
+let wizardFailed = 0;
+
+function openWizard() {
+  wizardFiles = [];
+  wizardBatch = null;
+  wizardIndex = 0;
+  wizardAdded = 0;
+  wizardFailed = 0;
+  document.getElementById('wizard-files').value = '';
+  document.getElementById('wizard-file-names').textContent = '';
+  document.getElementById('wizard-step-config').style.display = '';
+  document.getElementById('wizard-step-account').style.display = 'none';
+  document.getElementById('wizard-step-summary').style.display = 'none';
+  document.getElementById('wizard-submit').textContent = 'Далее';
+  document.getElementById('wizard-skip').style.display = 'none';
+  document.getElementById('wizard-auto-queue-chat').checked = true;
+  document.getElementById('wizard-modal-overlay').classList.add('active');
+  loadAssetStats();
+}
+
+function closeWizard(e) {
+  if (e && e.target !== document.getElementById('wizard-modal-overlay')) return;
+  document.getElementById('wizard-modal-overlay').classList.remove('active');
+}
+
+function wizardFilesSelected(input) {
+  wizardFiles = Array.from(input.files).filter(f => f.name.endsWith('.session'));
+  document.getElementById('wizard-file-names').textContent = wizardFiles.length
+    ? `✓ ${wizardFiles.length} файл(ов): ${wizardFiles.map(f => f.name).join(', ')}`
+    : '';
+}
+
+async function loadAssetStats() {
+  try {
+    const s = await api('GET', '/api/assets/stats');
+    document.getElementById('wizard-asset-stats').textContent =
+      `Фото: ${s.photos.used}/${s.photos.total}${s.photos.reusing ? ' (повторы включены)' : ''} · ` +
+      `Bio: ${s.bios.used}/${s.bios.total}${s.bios.reusing ? ' (повторы включены)' : ''}`;
+  } catch (e) {}
+}
+
+async function resetProfileAssets() {
+  if (!confirm('Сбросить занятые аватарки и bio? Уже созданные аккаунты не изменятся.')) return;
+  try {
+    await api('POST', '/api/assets/reset-profile-usage');
+    toast('✓ Занятые аватарки и bio сброшены', 'success');
+    await loadAssetStats();
+  } catch (e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function wizardNext() {
+  if (!wizardBatch) return prepareWizardBatch();
+  if (wizardIndex >= wizardBatch.items.length) return closeWizard();
+  return finalizeWizardAccount();
+}
+
+async function prepareWizardBatch() {
+  if (!wizardFiles.length) { toast('⚠️ Выбери .session файлы', 'error'); return; }
+  const btn = document.getElementById('wizard-submit');
+  btn.disabled = true;
+  btn.textContent = 'Готовлю...';
+  try {
+    const fd = new FormData();
+    for (const file of wizardFiles) fd.append('session_files', file);
+    fd.append('message', document.getElementById('wizard-message').value);
+    fd.append('interval_minutes', document.getElementById('wizard-interval').value);
+    fd.append('jitter_minutes', document.getElementById('wizard-jitter').value);
+    fd.append('sleep_start', document.getElementById('wizard-sleep-start').value);
+    fd.append('sleep_end', document.getElementById('wizard-sleep-end').value);
+    fd.append('timezone', 'Europe/Moscow');
+    fd.append('enabled', document.getElementById('wizard-enabled').checked);
+    fd.append('auto_queue_chat', document.getElementById('wizard-auto-queue-chat').checked);
+    const r = await fetch('/api/accounts/batch/prepare', { method: 'POST', body: fd });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || 'Ошибка подготовки');
+    wizardBatch = data;
+    wizardIndex = 0;
+    document.getElementById('wizard-step-config').style.display = 'none';
+    document.getElementById('wizard-step-account').style.display = '';
+    document.getElementById('wizard-skip').style.display = '';
+    showWizardAccount();
+  } catch (e) {
+    toast('❌ ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Продолжить';
+  }
+}
+
+function showWizardAccount() {
+  while (wizardBatch && wizardIndex < wizardBatch.items.length && !wizardBatch.items[wizardIndex].ok) {
+    wizardFailed++;
+    wizardIndex++;
+  }
+  if (!wizardBatch || wizardIndex >= wizardBatch.items.length) return showWizardSummary();
+  const it = wizardBatch.items[wizardIndex];
+  document.getElementById('wizard-progress').style.width = `${Math.round((wizardIndex / wizardBatch.items.length) * 100)}%`;
+  document.getElementById('wizard-current').textContent =
+    `${wizardIndex + 1}/${wizardBatch.items.length}: ${it.file} · фото ${it.photo_reused ? 'повтор' : 'новое'} · bio ${it.bio_reused ? 'повтор' : 'новое'}`;
+  document.getElementById('wizard-photo').src = it.photo_url || '';
+  document.getElementById('wizard-bio').value = it.bio || '';
+  document.getElementById('wizard-birthday').value = it.birthday || '';
+  document.getElementById('wizard-userid').value = '';
+  document.getElementById('wizard-userid').placeholder = it.current_username ? `текущий: ${it.current_username}` : 'не установлен';
+  document.getElementById('wizard-first-name').value = '';
+  document.getElementById('wizard-first-name').placeholder = it.current_first_name ? `текущее: ${it.current_first_name}` : 'не установлено';
+  document.getElementById('wizard-last-name').value = '';
+  document.getElementById('wizard-last-name').placeholder = it.current_last_name ? `текущая: ${it.current_last_name}` : 'не установлена';
+  document.getElementById('wizard-error').textContent = '';
+}
+
+async function finalizeWizardAccount() {
+  const payload = {
+    index: wizardIndex,
+    userid: document.getElementById('wizard-userid').value.trim(),
+    first_name: document.getElementById('wizard-first-name').value.trim(),
+    last_name: document.getElementById('wizard-last-name').value.trim(),
+    bio: document.getElementById('wizard-bio').value.trim(),
+  };
+  const btn = document.getElementById('wizard-submit');
+  btn.disabled = true;
+  btn.textContent = 'Применяю...';
+  try {
+    await api('POST', `/api/accounts/batch/${wizardBatch.batch_id}/finalize`, payload);
+    wizardAdded++;
+    wizardIndex++;
+    await Promise.all([loadAccounts(), loadChats(), loadStats(), loadAssetStats()]);
+    showWizardAccount();
+  } catch (e) {
+    document.getElementById('wizard-error').textContent = e.message;
+    toast('❌ Исправь данные и повтори', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Продолжить';
+  }
+}
+
+function skipWizardAccount() {
+  if (!wizardBatch || wizardIndex >= wizardBatch.items.length) return;
+  wizardFailed++;
+  wizardIndex++;
+  showWizardAccount();
+}
+
+function showWizardSummary() {
+  document.getElementById('wizard-step-account').style.display = 'none';
+  document.getElementById('wizard-step-summary').style.display = '';
+  document.getElementById('wizard-skip').style.display = 'none';
+  const waiting = document.querySelectorAll('.account-item').length;
+  document.getElementById('wizard-step-summary').innerHTML =
+    `<div class="empty-state"><div class="empty-text">Готово<br>Добавлено: ${wizardAdded}<br>Проблемные: ${wizardFailed}<br>Проверь статусы в списке аккаунтов.</div></div>`;
+  document.getElementById('wizard-submit').textContent = 'Закрыть';
+  wizardBatch.items = [];
+  wizardIndex = 0;
+}
+
+// --- Bulk upload ---
+let bulkFiles = [];
+
+function bulkFileDrag(e, over) {
+  e.preventDefault();
+  document.getElementById('bulk-file-drop').classList.toggle('drag', over);
+}
+
+function bulkFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('bulk-file-drop').classList.remove('drag');
+  bulkFiles = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.session'));
+  updateBulkFileNames();
+}
+
+function bulkFileSelected(input) {
+  bulkFiles = Array.from(input.files).filter(f => f.name.endsWith('.session'));
+  updateBulkFileNames();
+}
+
+function updateBulkFileNames() {
+  const el = document.getElementById('bulk-file-names');
+  if (!bulkFiles.length) { el.textContent = ''; return; }
+  el.textContent = `✓ ${bulkFiles.length} файл${bulkFiles.length > 1 ? 'а/ов' : ''}: ` +
+    bulkFiles.map(f => f.name).join(', ');
+}
+
+function openBulkModal() {
+  bulkFiles = [];
+  document.getElementById('bulk-file-names').textContent = '';
+  document.getElementById('bulk-session-files').value = '';
+  document.getElementById('bulk-chat').value = '';
+  document.getElementById('bulk-message').value = 'фиш';
+  document.getElementById('bulk-interval').value = 10;
+  document.getElementById('bulk-lbl-interval').textContent = 10;
+  document.getElementById('bulk-lbl-interval2').textContent = 10;
+  document.getElementById('bulk-jitter').value = 2;
+  document.getElementById('bulk-lbl-jitter').textContent = 2;
+  document.getElementById('bulk-lbl-jitter2').textContent = 2;
+  document.getElementById('bulk-sleep-start').value = '23:30';
+  document.getElementById('bulk-sleep-end').value = '09:00';
+  document.getElementById('bulk-enabled').checked = true;
+  document.getElementById('bulk-results').style.display = 'none';
+  document.getElementById('bulk-results-list').innerHTML = '';
+  document.getElementById('bulk-modal-overlay').classList.add('active');
+}
+
+function closeBulkModal(e) {
+  if (e && e.target !== document.getElementById('bulk-modal-overlay')) return;
+  document.getElementById('bulk-modal-overlay').classList.remove('active');
+}
+
+async function submitBulk() {
+  if (!bulkFiles.length) { toast('⚠️ Выбери хотя бы один .session файл', 'error'); return; }
+  const chat = document.getElementById('bulk-chat').value.trim();
+  if (!chat) { toast('⚠️ Укажи чат', 'error'); return; }
+
+  const btn = document.getElementById('bulk-submit');
+  btn.disabled = true;
+  btn.textContent = `⌛ Загружаю ${bulkFiles.length} аккаунтов...`;
+
+  try {
+    const fd = new FormData();
+    for (const file of bulkFiles) fd.append('session_files', file);
+    fd.append('chat', chat);
+    fd.append('message', document.getElementById('bulk-message').value);
+    fd.append('interval_minutes', document.getElementById('bulk-interval').value);
+    fd.append('jitter_minutes', document.getElementById('bulk-jitter').value);
+    fd.append('sleep_start', document.getElementById('bulk-sleep-start').value);
+    fd.append('sleep_end', document.getElementById('bulk-sleep-end').value);
+    fd.append('timezone', 'Europe/Moscow');
+    fd.append('enabled', document.getElementById('bulk-enabled').checked);
+
+    const r = await fetch('/api/accounts/bulk-upload', { method: 'POST', body: fd });
+    const data = await r.json();
+
+    const resultsEl = document.getElementById('bulk-results');
+    const listEl = document.getElementById('bulk-results-list');
+    resultsEl.style.display = '';
+    listEl.innerHTML = data.results.map(res => {
+      if (res.ok) return `<div style="color:var(--green)">✓ ${res.file} → <b>${res.tg_name}</b></div>`;
+      return `<div style="color:var(--red)">✕ ${res.file} — ${res.error}</div>`;
+    }).join('');
+
+    toast(`✅ Добавлено: ${data.added}, ошибок: ${data.failed}`, data.failed ? 'info' : 'success');
+    if (data.added > 0) await loadAccounts();
+  } catch (e) {
+    toast('❌ ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Загрузить';
+  }
+}
+
+// --- Init & polling ---
+async function refresh() {
+  await loadSettings();                          // sets window.fishingLocationMode first
+  await Promise.all([loadAccounts(), loadLogs(), loadStats(), loadProxies(), loadChats()]);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('f-interval').addEventListener('input', function() {
+    document.getElementById('lbl-interval').textContent = this.value;
+    document.getElementById('lbl-interval2').textContent = this.value;
+  });
+  document.getElementById('f-jitter').addEventListener('input', function() {
+    document.getElementById('lbl-jitter').textContent = this.value;
+    document.getElementById('lbl-jitter2').textContent = this.value;
+  });
+  document.getElementById('bulk-interval').addEventListener('input', function() {
+    document.getElementById('bulk-lbl-interval').textContent = this.value;
+    document.getElementById('bulk-lbl-interval2').textContent = this.value;
+  });
+  document.getElementById('bulk-jitter').addEventListener('input', function() {
+    document.getElementById('bulk-lbl-jitter').textContent = this.value;
+    document.getElementById('bulk-lbl-jitter2').textContent = this.value;
+  });
+  refresh();
+  setInterval(refresh, 15000);
+});
+</script>
+</body>
+</html>

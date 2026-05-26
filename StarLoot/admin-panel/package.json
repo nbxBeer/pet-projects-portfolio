@@ -1,0 +1,13 @@
+{
+  "name": "starloot-admin",
+  "version": "1.0.0",
+  "description": "StarLoot Admin Panel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "analyze:suspicious": "node expedition-suspicious-analyzer.js"
+  },
+  "dependencies": {
+    "pg": "^8.20.0"
+  }
+}
